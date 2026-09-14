@@ -12,6 +12,13 @@ updates:
   pre_update_backup: full
   non_interactive_local_changes: stash
 
+plugins:
+  enabled:
+    - hermes-lcm
+
+context:
+  engine: lcm
+
 agent:
   max_turns: 160
   reasoning_effort: high

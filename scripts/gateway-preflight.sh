@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hermes_home=${HERMES_HOME:-$HOME/.hermes}
 env_file="$hermes_home/.env"
 
@@ -44,5 +45,7 @@ if grep -RIl '^TELEGRAM_' "$hermes_home/profiles" --include=.env 2>/dev/null | g
   echo "Telegram credentials or policy appeared in a secondary profile." >&2
   exit 1
 fi
+
+"$repo_root/scripts/verify-lcm-pin.sh"
 
 echo "Gateway preflight passed: one operator, one DM chat, no group access, no OpenAI API key."

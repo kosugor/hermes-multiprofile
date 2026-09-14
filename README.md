@@ -11,7 +11,7 @@ Docker.
 | --- | --- | --- | --- |
 | `default` | Orchestrator | `openai-codex/gpt-5.6-sol` | fail closed |
 | `researcher` | Researcher | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
-| `coder` | Coder | `openai-codex/gpt-5.6-sol` | fail closed |
+| `coder` | Coder + profile-local LCM | `openai-codex/gpt-5.6-sol` | fail closed |
 | `reviewer` | Reviewer | `openai-codex/gpt-5.6-sol` | fail closed |
 | `wiki-maintainer` | Wiki Maintainer | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
 | `web-scraper` | Web Scraper | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
@@ -20,6 +20,11 @@ Docker.
 The default profile owns one multiplexed gateway, the Kanban dispatcher, and
 the only Telegram credential. Named profiles are workers. Kanban concurrency
 starts at one because the target machine has two CPU cores.
+
+Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
+`v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`.
+Its raw messages and summary DAG remain inside the Coder profile and are covered
+by the normal Hermes state backup.
 
 Native Hermes `execute_code` is disabled. File and shell operations use an
 ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
@@ -66,7 +71,9 @@ profiles; backs up an existing profile config before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
 installs user systemd units. Bundled skills are opted out for every profile so
 the positive tool policies remain the only capability surface. Bootstrap does
-not invent or overwrite secrets. Browser provisioning installs
+not invent or overwrite secrets. It also installs the exact reviewed LCM
+release into `~/.hermes/profiles/coder/plugins/hermes-lcm`; an existing checkout
+must already be clean and at the approved commit. Browser provisioning installs
 `agent-browser` 0.26.0 and Playwright 1.62.1 exactly, then downloads Playwright's
 ARM64 Chromium build; it deliberately does not install Browser Use CLI.
 The committed `infra/images.lock.env` contains no credentials. Bootstrap

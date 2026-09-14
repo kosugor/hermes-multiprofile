@@ -121,6 +121,9 @@ for profile in "${expected_profiles[@]}"; do
     hermes profile create "$profile" --description "${descriptions[$profile]}" --no-alias --no-skills
   fi
   install_profile_files "$profile"
+  if [[ $profile == coder ]]; then
+    "$repo_root/scripts/install-lcm.sh"
+  fi
   hermes -p "$profile" skills opt-out
   hermes profile describe "$profile" --text "${descriptions[$profile]}"
 done

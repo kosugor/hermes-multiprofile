@@ -16,7 +16,11 @@
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
-    "kanban_show", "kanban_unblock", "memory", "patch", "process_manage",
+    "kanban_show", "kanban_unblock", "lcm_compile_evidence", "lcm_compute",
+    "lcm_describe", "lcm_doctor", "lcm_evidence_pack", "lcm_expand",
+    "lcm_expand_query", "lcm_grep", "lcm_inspect", "lcm_load_session",
+    "lcm_query_state", "lcm_recall", "lcm_recent", "lcm_retrieve", "lcm_status",
+    "memory", "patch", "process_manage",
     "read_file", "search_files", "terminal", "write_file"
   ],
   "reviewer": [

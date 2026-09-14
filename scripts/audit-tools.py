@@ -40,6 +40,25 @@ FORBIDDEN = {
     "send_message",
     "cronjob",
 }
+PLUGIN_TOOLS = {
+    "hermes-lcm": {
+        "lcm_compile_evidence",
+        "lcm_compute",
+        "lcm_describe",
+        "lcm_doctor",
+        "lcm_evidence_pack",
+        "lcm_expand",
+        "lcm_expand_query",
+        "lcm_grep",
+        "lcm_inspect",
+        "lcm_load_session",
+        "lcm_query_state",
+        "lcm_recall",
+        "lcm_recent",
+        "lcm_retrieve",
+        "lcm_status",
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +81,15 @@ def main() -> int:
         platform_config = config.get("platform_toolsets") or {}
         disabled = set((config.get("agent") or {}).get("disabled_toolsets") or ())
         browser_config = config.get("browser") or {}
+        enabled_plugins = set((config.get("plugins") or {}).get("enabled") or ())
+        context_engine = (config.get("context") or {}).get("engine")
+        unknown_plugins = enabled_plugins - PLUGIN_TOOLS.keys()
+        if unknown_plugins:
+            failures.append(f"{profile}: unreviewed plugins={sorted(unknown_plugins)}")
+        if context_engine == "lcm" and "hermes-lcm" not in enabled_plugins:
+            failures.append(f"{profile}: lcm context engine requires hermes-lcm")
+        if "hermes-lcm" in enabled_plugins and context_engine != "lcm":
+            failures.append(f"{profile}: hermes-lcm must be the selected context engine")
         if profile == BROWSER_PROFILE:
             if "browser" in disabled:
                 failures.append(f"{profile}: browser must not be disabled")
@@ -85,6 +113,8 @@ def main() -> int:
             resolved: set[str] = set()
             for toolset_name in declared:
                 resolved.update(resolve_toolset(str(toolset_name)))
+            for plugin_name in enabled_plugins:
+                resolved.update(PLUGIN_TOOLS.get(plugin_name, ()))
             if profile == BROWSER_PROFILE and browser_config.get("backend") == "off":
                 # The static browser toolset contains both mutually exclusive
                 # surfaces. backend=off makes browser_exec's registry check fail,

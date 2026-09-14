@@ -23,7 +23,7 @@ runtime-gated and may be absent.
 | --- | --- |
 | Orchestrator CLI and Telegram | kanban, clarify, todo, memory, session_search |
 | Researcher Kanban worker | web, built-in browser, file, terminal, memory, session_search, plus Kanban lifecycle tools |
-| Coder Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
+| Coder Kanban worker | file, terminal, memory, the reviewed `lcm_*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Reviewer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Wiki Maintainer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Web Scraper Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
@@ -31,6 +31,11 @@ runtime-gated and may be absent.
 
 Also inspect a dashboard session. The dashboard must not widen the default
 profile's allowlist. Save all inventories as deployment evidence.
+
+For Coder, also run `lcm_status` in a fresh session. Confirm the plugin version
+is `1.0.0-rc.1`, the context engine is `lcm`, and the database path is scoped
+below `~/.hermes/profiles/coder`. LCM is a host-side plugin, so any additional
+or renamed schema is an unreviewed capability and must fail acceptance.
 
 The automated audit resolves every configured toolset through the installed
 Hermes registry and compares it with `policy/tool-inventory.json`. For

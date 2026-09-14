@@ -70,6 +70,16 @@ class BundleTests(unittest.TestCase):
             self.assertIn("  openai_runtime: auto", config, name)
             self.assertIn("updates:\n  check: false", config, name)
 
+    def test_lcm_is_enabled_only_for_coder(self):
+        for name in PROFILE_NAMES:
+            config = read(f"profiles/{name}/config.yaml")
+            if name == "coder":
+                self.assertIn("plugins:\n  enabled:\n    - hermes-lcm", config)
+                self.assertIn("context:\n  engine: lcm", config)
+            else:
+                self.assertNotIn("hermes-lcm", config, name)
+                self.assertNotIn("engine: lcm", config, name)
+
     def test_forbidden_toolsets_are_explicitly_disabled(self):
         forbidden = {
             "code_execution",
@@ -219,6 +229,7 @@ class BundleTests(unittest.TestCase):
             "install-host.sh",
             "install-hermes.sh",
             "install-browser.sh",
+            "install-lcm.sh",
             "bootstrap-user.sh",
             "lock-images.sh",
             "compose.sh",
@@ -232,6 +243,7 @@ class BundleTests(unittest.TestCase):
             "sync-boards.sh",
             "gateway-preflight.sh",
             "verify-hermes-pin.sh",
+            "verify-lcm-pin.sh",
             "verify-images.sh",
             "upgrade-hermes.sh",
         ):
@@ -265,6 +277,14 @@ class BundleTests(unittest.TestCase):
         self.assertIn('"$playwright_bin" install chromium', browser)
         self.assertIn('"$hermes_home/bin/chromium"', browser)
         self.assertNotIn("browser-use", browser)
+
+        lcm = read("scripts/install-lcm.sh")
+        self.assertIn("v1.0.0-rc.1", lcm)
+        self.assertIn("8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54", lcm)
+        self.assertIn('"$repo_root/scripts/verify-lcm-pin.sh"', lcm)
+        self.assertIn('"$repo_root/scripts/install-lcm.sh"', read("scripts/bootstrap-user.sh"))
+        self.assertIn('"$repo_root/scripts/verify-lcm-pin.sh"', read("scripts/validate.sh"))
+        self.assertIn('"$repo_root/scripts/verify-lcm-pin.sh"', read("scripts/gateway-preflight.sh"))
 
     def test_hermes_upgrade_uses_locked_environment(self):
         upgrade = read("scripts/upgrade-hermes.sh")
@@ -316,6 +336,19 @@ class BundleTests(unittest.TestCase):
         injected = {tool for tool in inventory["default"] if tool.startswith("kanban_")}
         for name in WORKERS:
             self.assertEqual(set(inventory[name]) | injected, set(workers[name]), name)
+
+        lcm_tools = {
+            "lcm_compile_evidence", "lcm_compute", "lcm_describe", "lcm_doctor",
+            "lcm_evidence_pack", "lcm_expand", "lcm_expand_query", "lcm_grep",
+            "lcm_inspect", "lcm_load_session", "lcm_query_state", "lcm_recall",
+            "lcm_recent", "lcm_retrieve", "lcm_status",
+        }
+        self.assertTrue(lcm_tools <= set(inventory["coder"]))
+        audit = read("scripts/audit-tools.py")
+        for tool in lcm_tools:
+            self.assertIn(f'"{tool}"', audit)
+        for name in PROFILE_NAMES - {"coder"}:
+            self.assertFalse(lcm_tools & set(inventory[name]), name)
 
     def test_sandbox_base_and_dependency_inputs_are_locked(self):
         dockerfile = read("images/hermes-sandbox/Dockerfile")

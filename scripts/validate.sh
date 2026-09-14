@@ -99,6 +99,7 @@ for profile in "${expected[@]}"; do
   fi
 done
 run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
+run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"
 
 hermes_script=$(readlink -f -- "$(command -v hermes)")
 hermes_python=$(sed -n '1s/^#!//p' "$hermes_script")
