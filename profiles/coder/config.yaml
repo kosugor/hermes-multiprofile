@@ -16,17 +16,17 @@ agent:
   max_turns: 160
   reasoning_effort: high
   verify_on_stop: true
-  disabled_toolsets: [browser, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
+  disabled_toolsets: [browser, web, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
   coding_instructions:
     - Work only in the Kanban-provided workspace mounted at /workspace.
     - Never push, merge, publish, deploy, or alter remotes.
     - Network access in terminal containers is intentionally unavailable.
 
 platform_toolsets:
-  cli: [file, terminal, web, memory]
-  telegram: [file, terminal, web, memory]
-  api_server: [file, terminal, web, memory]
-  cron: [file, terminal, web, memory]
+  cli: [file, terminal, memory]
+  telegram: [file, terminal, memory]
+  api_server: [file, terminal, memory]
+  cron: [file, terminal, memory]
 
 terminal:
   backend: docker
@@ -44,12 +44,6 @@ terminal:
   container_persistent: false
   docker_persist_across_processes: false
   persistent_shell: false
-
-web:
-  search_backend: searxng
-  extract_backend: firecrawl
-  keyless_fallback: false
-  keyless_rescue: false
 
 worktree_sync: false
 

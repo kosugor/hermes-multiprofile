@@ -12,7 +12,7 @@
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
     "kanban_show", "kanban_unblock", "memory", "patch", "process_manage",
-    "read_file", "search_files", "terminal", "web_extract", "web_search", "write_file"
+    "read_file", "search_files", "terminal", "write_file"
   ],
   "reviewer": [
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",
@@ -26,7 +26,7 @@
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
     "kanban_show", "kanban_unblock", "memory", "patch", "process_manage",
-    "read_file", "search_files", "terminal", "web_extract", "web_search", "write_file"
+    "read_file", "search_files", "terminal", "write_file"
   ],
   "web-scraper": [
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",

@@ -22,10 +22,11 @@ the only Telegram credential. Named profiles are workers. Kanban concurrency
 starts at one because the target machine has two CPU cores.
 
 Native Hermes `execute_code` is disabled. File and shell operations use an
-ephemeral, networkless Docker backend. The `web` tool remains available to the
-appropriate profiles and calls loopback-only SearXNG and Firecrawl services.
-The sandbox uses a digest-pinned Python 3.11/Node.js 22 Bookworm base and a
-date-pinned Debian snapshot for its reviewed build/test packages.
+ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
+Reviewer, Web Scraper, and Web Monitor, and calls loopback-only SearXNG and
+Firecrawl services. The sandbox uses a digest-pinned Python 3.11/Node.js 22
+Bookworm base and a date-pinned Debian snapshot for its reviewed build/test
+packages.
 
 ## Prerequisites
 

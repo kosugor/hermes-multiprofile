@@ -25,9 +25,9 @@ WORKERS = PROFILE_NAMES - {"default"}
 EXPECTED_TOOLSETS = {
     "default": {"kanban", "clarify", "todo", "memory", "session_search"},
     "researcher": {"web", "file", "terminal", "memory", "session_search"},
-    "coder": {"file", "terminal", "web", "memory"},
+    "coder": {"file", "terminal", "memory"},
     "reviewer": {"file", "terminal", "web"},
-    "wiki-maintainer": {"file", "terminal", "web", "memory"},
+    "wiki-maintainer": {"file", "terminal", "memory"},
     "web-scraper": {"web", "file", "terminal"},
     "web-monitor": {"web", "file"},
 }
@@ -85,6 +85,16 @@ class BundleTests(unittest.TestCase):
             self.assertIsNotNone(disabled_match, name)
             disabled_text = " ".join(group or "" for group in disabled_match.groups())
             self.assertTrue(forbidden <= set(re.findall(r"[a-z_]+", disabled_text)), name)
+
+    def test_web_capability_is_limited_to_source_facing_profiles(self):
+        web_profiles = {"researcher", "reviewer", "web-scraper", "web-monitor"}
+        for name in PROFILE_NAMES - web_profiles:
+            config = read(f"profiles/{name}/config.yaml")
+            disabled_match = re.search(r"disabled_toolsets:\s*(?:\[([^]]*)\]|\n((?:    - .+\n)+))", config)
+            self.assertIsNotNone(disabled_match, name)
+            disabled_text = " ".join(group or "" for group in disabled_match.groups())
+            self.assertIn("web", set(re.findall(r"[a-z_]+", disabled_text)), name)
+            self.assertNotRegex(config, r"(?m)^web:$", name)
 
     def test_worker_sandboxes_are_networkless_and_ephemeral(self):
         required = (

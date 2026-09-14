@@ -38,8 +38,6 @@
     "read_file",
     "search_files",
     "terminal",
-    "web_extract",
-    "web_search",
     "write_file"
   ],
   "reviewer": [
@@ -59,8 +57,6 @@
     "read_file",
     "search_files",
     "terminal",
-    "web_extract",
-    "web_search",
     "write_file"
   ],
   "web-scraper": [
