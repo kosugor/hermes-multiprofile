@@ -1,0 +1,22 @@
+[Unit]
+Description=Hermes multiplexed gateway and Kanban dispatcher
+Wants=network-online.target
+After=network-online.target docker.service hermes-web.service
+Requires=docker.service hermes-web.service
+
+[Service]
+Type=simple
+Environment=DOCKER_HOST=unix:///run/user/%U/docker.sock
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStartPre=@DEPLOY_DIR@/scripts/gateway-preflight.sh
+ExecStart=@HERMES_BIN@ gateway run --replace
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=90
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/.hermes /srv/hermes
+
+[Install]
+WantedBy=default.target

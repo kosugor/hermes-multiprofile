@@ -1,0 +1,214 @@
+name: hermes-web
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+x-security: &default-security
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  valkey:
+    image: ${VALKEY_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    command: ["valkey-server", "--save", "60", "1", "--loglevel", "warning"]
+    networks: [backend]
+    volumes:
+      - searxng-valkey:/data
+    mem_limit: 128m
+    cpus: 0.15
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  searxng:
+    image: ${SEARXNG_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    depends_on:
+      valkey:
+        condition: service_healthy
+    networks: [backend]
+    ports:
+      - "127.0.0.1:8888:8080"
+    environment:
+      SEARXNG_BASE_URL: http://127.0.0.1:8888/
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?set in infra/.env}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-cache:/var/cache/searxng
+    mem_limit: 384m
+    cpus: 0.25
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/search?q=health&format=json', timeout=10).read()"
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: ${REDIS_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    command: ["redis-server", "--bind", "0.0.0.0", "--appendonly", "yes", "--loglevel", "warning"]
+    networks: [backend]
+    volumes:
+      - firecrawl-redis:/data
+    mem_limit: 256m
+    cpus: 0.20
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: ${RABBITMQ_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    networks: [backend]
+    volumes:
+      - firecrawl-rabbitmq:/var/lib/rabbitmq
+    mem_limit: 384m
+    cpus: 0.25
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  nuq-postgres:
+    image: ${NUQ_POSTGRES_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-firecrawl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-firecrawl}
+    volumes:
+      - firecrawl-postgres:/var/lib/postgresql/data
+    mem_limit: 512m
+    cpus: 0.35
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  playwright-service:
+    image: ${PLAYWRIGHT_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      PORT: "3000"
+      MAX_CONCURRENT_PAGES: "1"
+      BLOCK_MEDIA: "true"
+      ALLOW_LOCAL_WEBHOOKS: "false"
+    shm_size: 512m
+    tmpfs:
+      - /tmp/.cache:noexec,nosuid,size=512m
+    mem_limit: 2g
+    cpus: 1.0
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const n=require('net').connect(3000,'127.0.0.1',()=>{n.end();process.exit(0)});n.on('error',()=>process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  firecrawl:
+    image: ${FIRECRAWL_IMAGE:?run scripts/lock-images.sh}
+    restart: unless-stopped
+    command: ["node", "dist/src/harness.js", "--start-docker"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      nuq-postgres:
+        condition: service_healthy
+      playwright-service:
+        condition: service_healthy
+    networks: [backend]
+    ports:
+      - "127.0.0.1:3002:3002"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3002"
+      INTERNAL_PORT: "3002"
+      EXTRACT_WORKER_PORT: "3004"
+      WORKER_PORT: "3005"
+      ENV: local
+      REDIS_URL: redis://redis:6379
+      REDIS_RATE_LIMIT_URL: redis://redis:6379
+      PLAYWRIGHT_MICROSERVICE_URL: http://playwright-service:3000/scrape
+      POSTGRES_USER: ${POSTGRES_USER:-firecrawl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-firecrawl}
+      POSTGRES_HOST: nuq-postgres
+      POSTGRES_PORT: "5432"
+      USE_DB_AUTHENTICATION: "false"
+      NUQ_RABBITMQ_URL: amqp://rabbitmq:5672
+      NUM_WORKERS_PER_QUEUE: "1"
+      CRAWL_CONCURRENT_REQUESTS: "1"
+      MAX_CONCURRENT_JOBS: "1"
+      BROWSER_POOL_SIZE: "1"
+      HARNESS_STARTUP_TIMEOUT_MS: "120000"
+      BULL_AUTH_KEY: ${BULL_AUTH_KEY:?set in infra/.env}
+      SEARXNG_ENDPOINT: http://searxng:8080
+      LOGGING_LEVEL: WARN
+      BLOCK_MEDIA: "true"
+      ALLOW_LOCAL_WEBHOOKS: "false"
+      X402_ENABLED: "false"
+    mem_limit: 2g
+    cpus: 1.0
+    logging: *default-logging
+    <<: *default-security
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002/v0/health/liveness').then(r=>{if(!r.ok)throw Error(r.status)}).then(()=>process.exit(0)).catch(()=>process.exit(1))"
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 90s
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  searxng-valkey:
+  searxng-cache:
+  firecrawl-redis:
+  firecrawl-rabbitmq:
+  firecrawl-postgres:
+

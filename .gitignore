@@ -1,0 +1,7 @@
+infra/.env
+profiles/**/.env
+backups/
+*.log
+__pycache__/
+*.pyc
+.uv-cache/

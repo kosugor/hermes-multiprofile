@@ -1,0 +1,15 @@
+bash
+build-essential
+ca-certificates
+cmake
+curl
+file
+git
+jq
+make
+ninja-build
+pkg-config
+ripgrep
+shellcheck
+sqlite3
+unzip

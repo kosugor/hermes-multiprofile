@@ -1,0 +1,67 @@
+database:
+  journal_mode: wal
+  synchronous: FULL
+
+model:
+  provider: openai-codex
+  default: gpt-5.6-luna
+  openai_runtime: auto
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+
+fallback_providers:
+  - provider: openrouter
+    model: openrouter/free
+  - provider: nous
+    model: nous/welcome
+
+nous:
+  guest: true
+
+agent:
+  max_turns: 50
+  reasoning_effort: low
+  verify_on_stop: false
+  disabled_toolsets: [terminal, browser, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, memory, session_search, vision, image_gen, tts]
+
+platform_toolsets:
+  cli: [web, file]
+  telegram: [web, file]
+  api_server: [web, file]
+  cron: [web, file]
+
+terminal:
+  backend: docker
+  timeout: 120
+  home_mode: profile
+  lifetime_seconds: 600
+  docker_image: hermes-sandbox:2026.09.11
+  docker_mount_cwd_to_workspace: true
+  docker_run_as_host_user: true
+  docker_forward_env: []
+  docker_network: false
+  docker_extra_args: ["--pids-limit", "256"]
+  container_cpu: 1
+  container_memory: 1536
+  container_persistent: false
+  docker_persist_across_processes: false
+  persistent_shell: false
+
+web:
+  search_backend: searxng
+  extract_backend: firecrawl
+  keyless_fallback: false
+  keyless_rescue: false
+
+cron:
+  model_provider: openai-codex
+  model: gpt-5.6-luna
+  max_parallel_jobs: 1
+  preflight: true
+  allow_agent_scheduling: false
+
+skills:
+  creation_nudge_interval: 0

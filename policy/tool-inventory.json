@@ -1,0 +1,84 @@
+{
+  "default": [
+    "clarify",
+    "kanban_attach",
+    "kanban_attach_url",
+    "kanban_attachments",
+    "kanban_block",
+    "kanban_comment",
+    "kanban_complete",
+    "kanban_create",
+    "kanban_heartbeat",
+    "kanban_link",
+    "kanban_list",
+    "kanban_request_changes",
+    "kanban_request_review",
+    "kanban_show",
+    "kanban_unblock",
+    "memory",
+    "session_search",
+    "todo_list"
+  ],
+  "researcher": [
+    "memory",
+    "patch",
+    "process_manage",
+    "read_file",
+    "search_files",
+    "session_search",
+    "terminal",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ],
+  "coder": [
+    "memory",
+    "patch",
+    "process_manage",
+    "read_file",
+    "search_files",
+    "terminal",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ],
+  "reviewer": [
+    "patch",
+    "process_manage",
+    "read_file",
+    "search_files",
+    "terminal",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ],
+  "wiki-maintainer": [
+    "memory",
+    "patch",
+    "process_manage",
+    "read_file",
+    "search_files",
+    "terminal",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ],
+  "web-scraper": [
+    "patch",
+    "process_manage",
+    "read_file",
+    "search_files",
+    "terminal",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ],
+  "web-monitor": [
+    "patch",
+    "read_file",
+    "search_files",
+    "web_extract",
+    "web_search",
+    "write_file"
+  ]
+}

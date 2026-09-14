@@ -1,0 +1,20 @@
+[Unit]
+Description=Hermes self-hosted SearXNG and Firecrawl stack
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=DOCKER_HOST=unix:///run/user/%U/docker.sock
+WorkingDirectory=@DEPLOY_DIR@
+ExecStartPre=/usr/bin/test -r /etc/nftables.d/hermes-egress.nft
+ExecStartPre=/usr/bin/systemctl is-active --quiet nftables.service
+ExecStart=@DEPLOY_DIR@/scripts/compose.sh up
+ExecStop=@DEPLOY_DIR@/scripts/compose.sh stop
+TimeoutStartSec=600
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target

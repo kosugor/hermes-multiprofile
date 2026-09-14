@@ -1,0 +1,20 @@
+[Unit]
+Description=Hermes private web dashboard
+Wants=network-online.target
+After=network-online.target hermes-gateway.service
+Requires=hermes-gateway.service
+
+[Service]
+Type=simple
+Environment=DOCKER_HOST=unix:///run/user/%U/docker.sock
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=@HERMES_BIN@ dashboard --host 127.0.0.1 --port 9119 --no-open
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/.hermes /srv/hermes
+
+[Install]
+WantedBy=default.target

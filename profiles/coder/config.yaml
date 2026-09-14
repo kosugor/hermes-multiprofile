@@ -1,0 +1,57 @@
+database:
+  journal_mode: wal
+  synchronous: FULL
+
+model:
+  provider: openai-codex
+  default: gpt-5.6-sol
+  openai_runtime: auto
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+
+agent:
+  max_turns: 160
+  reasoning_effort: high
+  verify_on_stop: true
+  disabled_toolsets: [browser, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
+  coding_instructions:
+    - Work only in the Kanban-provided workspace mounted at /workspace.
+    - Never push, merge, publish, deploy, or alter remotes.
+    - Network access in terminal containers is intentionally unavailable.
+
+platform_toolsets:
+  cli: [file, terminal, web, memory]
+  telegram: [file, terminal, web, memory]
+  api_server: [file, terminal, web, memory]
+  cron: [file, terminal, web, memory]
+
+terminal:
+  backend: docker
+  timeout: 300
+  home_mode: profile
+  lifetime_seconds: 600
+  docker_image: hermes-sandbox:2026.09.11
+  docker_mount_cwd_to_workspace: true
+  docker_run_as_host_user: true
+  docker_forward_env: []
+  docker_network: false
+  docker_extra_args: ["--pids-limit", "256"]
+  container_cpu: 1
+  container_memory: 1536
+  container_persistent: false
+  docker_persist_across_processes: false
+  persistent_shell: false
+
+web:
+  search_backend: searxng
+  extract_backend: firecrawl
+  keyless_fallback: false
+  keyless_rescue: false
+
+worktree_sync: false
+
+skills:
+  creation_nudge_interval: 0

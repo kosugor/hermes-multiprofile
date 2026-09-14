@@ -1,0 +1,77 @@
+database:
+  journal_mode: wal
+  synchronous: FULL
+
+model:
+  provider: openai-codex
+  default: gpt-5.6-sol
+  openai_runtime: auto
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+
+agent:
+  max_turns: 120
+  reasoning_effort: high
+  verify_on_stop: false
+  disabled_toolsets:
+    - terminal
+    - file
+    - web
+    - search
+    - browser
+    - computer_use
+    - code_execution
+    - delegation
+    - messaging
+    - cronjob
+    - skills
+    - skills_hub
+    - vision
+    - image_gen
+    - tts
+
+platform_toolsets:
+  cli: [kanban, clarify, todo, memory, session_search]
+  telegram: [kanban, clarify, todo, memory, session_search]
+  api_server: [kanban, clarify, todo, memory, session_search]
+  cron: [kanban, clarify, todo, memory, session_search]
+
+gateway:
+  multiplex_profiles: true
+  multiplex_profile_allowlist:
+    - researcher
+    - coder
+    - reviewer
+    - wiki-maintainer
+    - web-scraper
+    - web-monitor
+  trust_env: false
+
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  review_dispatch: true
+  auto_decompose: false
+  orchestrator_profile: default
+  default_assignee: default
+  auto_subscribe_on_create: true
+  max_in_progress: 1
+  max_in_progress_per_profile: 1
+  auto_promote_children: true
+
+cron:
+  max_parallel_jobs: 1
+  preflight: true
+  allow_agent_scheduling: false
+
+sessions:
+  auto_prune: true
+  retention_days: 90
+  vacuum_after_prune: true
+  min_vacuum_interval_days: 30
+
+skills:
+  creation_nudge_interval: 0
