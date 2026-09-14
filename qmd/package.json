@@ -1,0 +1,9 @@
+{
+  "name": "hermes-qmd-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@tobilu/qmd": "2.8.3"
+  }
+}

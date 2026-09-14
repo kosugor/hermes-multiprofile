@@ -128,6 +128,8 @@ for profile in "${expected_profiles[@]}"; do
   hermes profile describe "$profile" --text "${descriptions[$profile]}"
 done
 
+"$repo_root/scripts/install-qmd.sh"
+
 hermes profile rename default Orchestrator
 hermes profile describe default --text "Routes work through durable Kanban cards and enforces review, isolation, and the human publishing gate."
 "$repo_root/scripts/sync-boards.sh"
@@ -162,7 +164,12 @@ escaped_root=${escaped_root//\//\\/}
 hermes_bin=$(command -v hermes)
 escaped_hermes=${hermes_bin//&/\\&}
 escaped_hermes=${escaped_hermes//\//\\/}
-for unit in hermes-web.service hermes-gateway.service hermes-dashboard.service; do
+for unit in \
+  hermes-web.service \
+  hermes-gateway.service \
+  hermes-dashboard.service \
+  hermes-qmd-index.service \
+  hermes-qmd-index.timer; do
   sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" -e "s/@HERMES_BIN@/${escaped_hermes}/g" \
     "$repo_root/systemd/${unit}.in" > "$unit_dir/$unit"
 done
@@ -183,6 +190,6 @@ Next:
   1. Fill ~/.hermes/.env with TELEGRAM_BOT_TOKEN and set both Telegram ID fields to your numeric user ID.
   2. Add OPENROUTER_API_KEY only to fallback-enabled profile .env files.
   3. Run: hermes auth add openai-codex
-  4. Enable hermes-web, hermes-gateway, and hermes-dashboard user services.
+  4. Enable hermes-web, hermes-gateway, hermes-dashboard, and the QMD index timer.
   5. Run: $repo_root/scripts/validate.sh
 EOF

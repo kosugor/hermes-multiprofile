@@ -100,6 +100,13 @@ for profile in "${expected[@]}"; do
 done
 run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
 run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"
+run_check "Wiki Maintainer QMD runtime is pinned" "$repo_root/scripts/verify-qmd-pin.sh"
+run_check "Wiki Maintainer QMD index is readable" \
+  env \
+    "PATH=$hermes_home/node/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+    "QMD_CONFIG_DIR=$hermes_home/profiles/wiki-maintainer/qmd" \
+    QMD_FORCE_CPU=1 \
+    "$hermes_home/qmd-runtime/node_modules/.bin/qmd" status
 
 hermes_script=$(readlink -f -- "$(command -v hermes)")
 hermes_python=$(sed -n '1s/^#!//p' "$hermes_script")
@@ -118,6 +125,7 @@ running_count=$(grep -c . <<<"$running_output" || true)
 run_check "gateway systemd service is active" systemctl --user is-active --quiet hermes-gateway.service
 run_check "dashboard systemd service is active" systemctl --user is-active --quiet hermes-dashboard.service
 run_check "web systemd service is active" systemctl --user is-active --quiet hermes-web.service
+run_check "QMD index timer is active" systemctl --user is-active --quiet hermes-qmd-index.timer
 
 unexpected_listeners=$(ss -H -lnt | awk '
   $4 ~ /:(3002|8888|9119)$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print }

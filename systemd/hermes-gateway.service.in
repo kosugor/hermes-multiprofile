@@ -16,7 +16,7 @@ TimeoutStopSec=90
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=%h/.hermes /srv/hermes
+ReadWritePaths=%h/.hermes %h/.cache/qmd /srv/hermes
 
 [Install]
 WantedBy=default.target

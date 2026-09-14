@@ -80,6 +80,17 @@ class BundleTests(unittest.TestCase):
                 self.assertNotIn("hermes-lcm", config, name)
                 self.assertNotIn("engine: lcm", config, name)
 
+    def test_qmd_is_read_only_and_limited_to_wiki_maintainer(self):
+        wiki = read("profiles/wiki-maintainer/config.yaml")
+        self.assertIn("mcp_servers:\n  qmd:", wiki)
+        self.assertIn('command: "${userHome}/.hermes/qmd-runtime/node_modules/.bin/qmd"', wiki)
+        self.assertIn("include: [query, get, multi_get, status]", wiki)
+        self.assertIn("trust: untrusted", wiki)
+        self.assertIn("resources: false", wiki)
+        self.assertIn("prompts: false", wiki)
+        for name in PROFILE_NAMES - {"wiki-maintainer"}:
+            self.assertNotIn("mcp_servers:", read(f"profiles/{name}/config.yaml"), name)
+
     def test_forbidden_toolsets_are_explicitly_disabled(self):
         forbidden = {
             "code_execution",
@@ -202,6 +213,21 @@ class BundleTests(unittest.TestCase):
         self.assertNotIn('"0.0.0.0:8888:', compose)
         self.assertNotIn('"0.0.0.0:3002:', compose)
 
+    def test_qmd_indexer_is_local_and_resource_limited(self):
+        service = read("systemd/hermes-qmd-index.service.in")
+        timer = read("systemd/hermes-qmd-index.timer.in")
+        gateway = read("systemd/hermes-gateway.service.in")
+        bootstrap = read("scripts/bootstrap-user.sh")
+        self.assertIn("QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd", service)
+        self.assertIn("QMD_FORCE_CPU=1", service)
+        self.assertIn("TimeoutStartSec=65min", service)
+        self.assertIn("CPUQuota=100%", service)
+        self.assertIn("MemoryMax=3G", service)
+        self.assertIn("ReadOnlyPaths=/srv/hermes/wiki", service)
+        self.assertIn("OnUnitInactiveSec=15min", timer)
+        self.assertIn("%h/.cache/qmd", gateway)
+        self.assertIn("hermes-qmd-index.timer", bootstrap)
+
     def test_monitor_installs_paused_with_default_delivery(self):
         script = read("scripts/install-monitor.sh")
         self.assertIn("--paused", script)
@@ -230,6 +256,7 @@ class BundleTests(unittest.TestCase):
             "install-hermes.sh",
             "install-browser.sh",
             "install-lcm.sh",
+            "install-qmd.sh",
             "bootstrap-user.sh",
             "lock-images.sh",
             "compose.sh",
@@ -244,6 +271,7 @@ class BundleTests(unittest.TestCase):
             "gateway-preflight.sh",
             "verify-hermes-pin.sh",
             "verify-lcm-pin.sh",
+            "verify-qmd-pin.sh",
             "verify-images.sh",
             "upgrade-hermes.sh",
         ):
@@ -285,6 +313,35 @@ class BundleTests(unittest.TestCase):
         self.assertIn('"$repo_root/scripts/install-lcm.sh"', read("scripts/bootstrap-user.sh"))
         self.assertIn('"$repo_root/scripts/verify-lcm-pin.sh"', read("scripts/validate.sh"))
         self.assertIn('"$repo_root/scripts/verify-lcm-pin.sh"', read("scripts/gateway-preflight.sh"))
+
+        qmd_install = read("scripts/install-qmd.sh")
+        self.assertIn("qmd_version=2.8.3", qmd_install)
+        self.assertIn('"$managed_node/npm" ci --omit=dev', qmd_install)
+        self.assertIn('"$qmd_bin" pull', qmd_install)
+        self.assertIn('"$qmd_bin" embed --timeout 60', qmd_install)
+        self.assertIn('"$repo_root/scripts/install-qmd.sh"', read("scripts/bootstrap-user.sh"))
+        self.assertIn('"$repo_root/scripts/verify-qmd-pin.sh"', read("scripts/validate.sh"))
+        self.assertIn('"$repo_root/scripts/verify-qmd-pin.sh"', read("scripts/gateway-preflight.sh"))
+        qmd_verify = read("scripts/verify-qmd-pin.sh")
+        for model_sha256 in (
+            "b5ce9d77a3fc4b3b39ccb5643c36777911cc4eb46a66962eadfa3f5f60490d63",
+            "22c9979ce4fbcdc5acdc310c6641c32797eff1aa980b8f7a2db8a8ea23429a48",
+            "000dfb1c06efa6a049e9f64ba921c3740e2454f62abab6fa10e77bd30bb2bcc0",
+        ):
+            self.assertIn(model_sha256, qmd_verify)
+
+        qmd_package = __import__("json").loads(read("qmd/package.json"))
+        qmd_lock = __import__("json").loads(read("qmd/package-lock.json"))
+        self.assertEqual("2.8.3", qmd_package["dependencies"]["@tobilu/qmd"])
+        locked_qmd = qmd_lock["packages"]["node_modules/@tobilu/qmd"]
+        self.assertEqual("2.8.3", locked_qmd["version"])
+        self.assertEqual(
+            "sha512-zjfVwrObPB618B6x8SdhlGv/tX9OxRHsbQnr5DUtBvqPK6HGQ27lM+9/BAY5okpjrHVnW56hLyDkqoTcsrVLzA==",
+            locked_qmd["integrity"],
+        )
+        for path, package in qmd_lock["packages"].items():
+            if path and package.get("resolved"):
+                self.assertIn("integrity", package, path)
 
     def test_hermes_upgrade_uses_locked_environment(self):
         upgrade = read("scripts/upgrade-hermes.sh")
@@ -349,6 +406,14 @@ class BundleTests(unittest.TestCase):
             self.assertIn(f'"{tool}"', audit)
         for name in PROFILE_NAMES - {"coder"}:
             self.assertFalse(lcm_tools & set(inventory[name]), name)
+
+        qmd_tools = {
+            "mcp__qmd__query", "mcp__qmd__get",
+            "mcp__qmd__multi_get", "mcp__qmd__status",
+        }
+        self.assertTrue(qmd_tools <= set(inventory["wiki-maintainer"]))
+        for name in PROFILE_NAMES - {"wiki-maintainer"}:
+            self.assertFalse(qmd_tools & set(inventory[name]), name)
 
     def test_sandbox_base_and_dependency_inputs_are_locked(self):
         dockerfile = read("images/hermes-sandbox/Dockerfile")

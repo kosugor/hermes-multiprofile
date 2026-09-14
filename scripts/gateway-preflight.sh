@@ -47,5 +47,6 @@ if grep -RIl '^TELEGRAM_' "$hermes_home/profiles" --include=.env 2>/dev/null | g
 fi
 
 "$repo_root/scripts/verify-lcm-pin.sh"
+"$repo_root/scripts/verify-qmd-pin.sh"
 
-echo "Gateway preflight passed: one operator, one DM chat, no group access, no OpenAI API key."
+echo "Gateway preflight passed: one operator, one DM chat, no group access, no OpenAI API key, reviewed local plugins."

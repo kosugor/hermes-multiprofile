@@ -25,7 +25,7 @@ runtime-gated and may be absent.
 | Researcher Kanban worker | web, built-in browser, file, terminal, memory, session_search, plus Kanban lifecycle tools |
 | Coder Kanban worker | file, terminal, memory, the reviewed `lcm_*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Reviewer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
-| Wiki Maintainer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
+| Wiki Maintainer Kanban worker | file, terminal, memory, the four reviewed read-only `mcp__qmd__*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Web Scraper Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Web Monitor cron worker | web, file |
 
@@ -45,6 +45,12 @@ It separately checks the exact union created when the dispatcher injects Kanban
 lifecycle tools against `policy/kanban-worker-inventory.json`. When a tested
 Hermes patch intentionally changes a toolset, review the new tool before
 updating either policy file.
+
+For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
+`wiki` at `/srv/hermes/wiki`. Search for a known canonical page with
+`mcp__qmd__query`, retrieve it with `mcp__qmd__get`, and confirm `/tools list`
+contains no QMD collection-management or write tools. Verify
+`hermes-qmd-index.timer` is active and its most recent service run succeeded.
 
 ## Researcher browser fixture
 

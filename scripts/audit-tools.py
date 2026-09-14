@@ -59,6 +59,28 @@ PLUGIN_TOOLS = {
         "lcm_status",
     },
 }
+QMD_PROFILE = "wiki-maintainer"
+QMD_TOOLS = {"query", "get", "multi_get", "status"}
+QMD_SERVER_POLICY = {
+    "command": "${userHome}/.hermes/qmd-runtime/node_modules/.bin/qmd",
+    "args": ["mcp"],
+    "env": {
+        "PATH": "${userHome}/.hermes/node/bin:/usr/local/bin:/usr/bin:/bin",
+        "QMD_CONFIG_DIR": "${userHome}/.hermes/profiles/wiki-maintainer/qmd",
+        "QMD_FORCE_CPU": "1",
+    },
+    "timeout": 120,
+    "connect_timeout": 45,
+    "supports_parallel_tool_calls": False,
+    "idle_timeout_seconds": 300,
+    "max_lifetime_seconds": 1800,
+    "trust": "untrusted",
+    "tools": {
+        "include": ["query", "get", "multi_get", "status"],
+        "resources": False,
+        "prompts": False,
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,6 +104,7 @@ def main() -> int:
         disabled = set((config.get("agent") or {}).get("disabled_toolsets") or ())
         browser_config = config.get("browser") or {}
         enabled_plugins = set((config.get("plugins") or {}).get("enabled") or ())
+        mcp_servers = config.get("mcp_servers") or {}
         context_engine = (config.get("context") or {}).get("engine")
         unknown_plugins = enabled_plugins - PLUGIN_TOOLS.keys()
         if unknown_plugins:
@@ -90,6 +113,13 @@ def main() -> int:
             failures.append(f"{profile}: lcm context engine requires hermes-lcm")
         if "hermes-lcm" in enabled_plugins and context_engine != "lcm":
             failures.append(f"{profile}: hermes-lcm must be the selected context engine")
+        if profile == QMD_PROFILE:
+            if set(mcp_servers) != {"qmd"}:
+                failures.append(f"{profile}: expected only the reviewed qmd MCP server")
+            elif mcp_servers["qmd"] != QMD_SERVER_POLICY:
+                failures.append(f"{profile}: qmd MCP policy drift")
+        elif mcp_servers:
+            failures.append(f"{profile}: unexpected MCP servers={sorted(mcp_servers)}")
         if profile == BROWSER_PROFILE:
             if "browser" in disabled:
                 failures.append(f"{profile}: browser must not be disabled")
@@ -115,6 +145,8 @@ def main() -> int:
                 resolved.update(resolve_toolset(str(toolset_name)))
             for plugin_name in enabled_plugins:
                 resolved.update(PLUGIN_TOOLS.get(plugin_name, ()))
+            if profile == QMD_PROFILE and mcp_servers.get("qmd") == QMD_SERVER_POLICY:
+                resolved.update(f"mcp__qmd__{name}" for name in QMD_TOOLS)
             if profile == BROWSER_PROFILE and browser_config.get("backend") == "off":
                 # The static browser toolset contains both mutually exclusive
                 # surfaces. backend=off makes browser_exec's registry check fail,

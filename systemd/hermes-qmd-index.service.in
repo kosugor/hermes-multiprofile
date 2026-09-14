@@ -1,0 +1,24 @@
+[Unit]
+Description=Refresh the Wiki Maintainer QMD index
+ConditionPathIsDirectory=/srv/hermes/wiki
+ConditionPathExists=%h/.hermes/profiles/wiki-maintainer/qmd/index.yml
+
+[Service]
+Type=oneshot
+TimeoutStartSec=65min
+Environment=PATH=%h/.hermes/node/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd
+Environment=QMD_FORCE_CPU=1
+ExecStart=%h/.hermes/qmd-runtime/node_modules/.bin/qmd update
+ExecStart=%h/.hermes/qmd-runtime/node_modules/.bin/qmd embed --timeout 60
+Nice=10
+CPUQuota=100%
+MemoryMax=3G
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/.cache/qmd
+ReadOnlyPaths=/srv/hermes/wiki
+
+[Install]
+WantedBy=default.target

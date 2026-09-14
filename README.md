@@ -13,7 +13,7 @@ Docker.
 | `researcher` | Researcher | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
 | `coder` | Coder + profile-local LCM | `openai-codex/gpt-5.6-sol` | fail closed |
 | `reviewer` | Reviewer | `openai-codex/gpt-5.6-sol` | fail closed |
-| `wiki-maintainer` | Wiki Maintainer | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
+| `wiki-maintainer` | Wiki Maintainer + QMD wiki search | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
 | `web-scraper` | Web Scraper | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 | `web-monitor` | Web Monitor | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 
@@ -25,6 +25,14 @@ Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
 `v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`.
 Its raw messages and summary DAG remain inside the Coder profile and are covered
 by the normal Hermes state backup.
+
+Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
+`/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
+checksum pinned. It runs locally in stdio mode and exposes only query,
+retrieval, and status tools. A low-priority user
+timer refreshes its lexical and vector index every 15 minutes. The rebuildable
+index and approximately 2 GB of on-demand local models remain under
+`~/.cache/qmd` and are intentionally excluded from state backups.
 
 Native Hermes `execute_code` is disabled. File and shell operations use an
 ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
@@ -73,7 +81,9 @@ installs user systemd units. Bundled skills are opted out for every profile so
 the positive tool policies remain the only capability surface. Bootstrap does
 not invent or overwrite secrets. It also installs the exact reviewed LCM
 release into `~/.hermes/profiles/coder/plugins/hermes-lcm`; an existing checkout
-must already be clean and at the approved commit. Browser provisioning installs
+must already be clean and at the approved commit. The lockfile-pinned QMD
+runtime, local models, and initial wiki index are installed for Wiki Maintainer.
+Browser provisioning installs
 `agent-browser` 0.26.0 and Playwright 1.62.1 exactly, then downloads Playwright's
 ARM64 Chromium build; it deliberately does not install Browser Use CLI.
 The committed `infra/images.lock.env` contains no credentials. Bootstrap
@@ -110,6 +120,7 @@ hermes auth add openai-codex
 sudo bash ./scripts/install-egress-guard.sh --user hermes
 sudo bash ./scripts/install-egress-guard.sh --user hermes --apply
 systemctl --user enable --now hermes-web.service
+systemctl --user enable --now hermes-qmd-index.timer
 systemctl --user enable --now hermes-gateway.service
 systemctl --user enable --now hermes-dashboard.service
 ./scripts/validate.sh

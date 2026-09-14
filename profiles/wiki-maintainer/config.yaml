@@ -33,6 +33,25 @@ platform_toolsets:
   api_server: [file, terminal, memory]
   cron: [file, terminal, memory]
 
+mcp_servers:
+  qmd:
+    command: "${userHome}/.hermes/qmd-runtime/node_modules/.bin/qmd"
+    args: ["mcp"]
+    env:
+      PATH: "${userHome}/.hermes/node/bin:/usr/local/bin:/usr/bin:/bin"
+      QMD_CONFIG_DIR: "${userHome}/.hermes/profiles/wiki-maintainer/qmd"
+      QMD_FORCE_CPU: "1"
+    timeout: 120
+    connect_timeout: 45
+    supports_parallel_tool_calls: false
+    idle_timeout_seconds: 300
+    max_lifetime_seconds: 1800
+    trust: untrusted
+    tools:
+      include: [query, get, multi_get, status]
+      resources: false
+      prompts: false
+
 terminal:
   backend: docker
   timeout: 180
