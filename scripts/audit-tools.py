@@ -14,10 +14,28 @@ from toolsets import resolve_toolset
 
 
 PLATFORMS = ("cli", "telegram", "api_server", "cron")
+BROWSER_PROFILE = "researcher"
+BROWSER_POLICY = {
+    "backend": "off",
+    "cloud_provider": "local",
+    "engine": "chrome",
+    "headed": False,
+    "inactivity_timeout": 60,
+    "command_timeout": 30,
+    "record_sessions": False,
+    "allow_private_urls": False,
+    "auto_local_for_private_urls": False,
+    "cdp_url": "",
+    "restrict_evaluate": True,
+    "allow_unsafe_evaluate": False,
+    "use_real_profile": False,
+    "dialog_policy": "auto_dismiss",
+    "dialog_timeout_s": 30,
+}
 FORBIDDEN = {
     "execute_code",
     "delegate_task",
-    "browser_navigate",
+    "browser_exec",
     "computer_use",
     "send_message",
     "cronjob",
@@ -42,6 +60,22 @@ def main() -> int:
     for profile, expected_names in reviewed.items():
         config = yaml.safe_load((bundle / "profiles" / profile / "config.yaml").read_text(encoding="utf-8"))
         platform_config = config.get("platform_toolsets") or {}
+        disabled = set((config.get("agent") or {}).get("disabled_toolsets") or ())
+        browser_config = config.get("browser") or {}
+        if profile == BROWSER_PROFILE:
+            if "browser" in disabled:
+                failures.append(f"{profile}: browser must not be disabled")
+            for key, required in BROWSER_POLICY.items():
+                if browser_config.get(key) != required:
+                    failures.append(
+                        f"{profile}: browser.{key} must be {required!r}; "
+                        f"found {browser_config.get(key)!r}"
+                    )
+        else:
+            if "browser" not in disabled:
+                failures.append(f"{profile}: browser must be explicitly disabled")
+            if browser_config:
+                failures.append(f"{profile}: unexpected browser configuration")
         expected = set(expected_names)
         for platform in PLATFORMS:
             declared = platform_config.get(platform)
@@ -51,6 +85,11 @@ def main() -> int:
             resolved: set[str] = set()
             for toolset_name in declared:
                 resolved.update(resolve_toolset(str(toolset_name)))
+            if profile == BROWSER_PROFILE and browser_config.get("backend") == "off":
+                # The static browser toolset contains both mutually exclusive
+                # surfaces. backend=off makes browser_exec's registry check fail,
+                # leaving only the built-in browser_* tools callable.
+                resolved.discard("browser_exec")
             if resolved != expected:
                 missing = sorted(expected - resolved)
                 extra = sorted(resolved - expected)

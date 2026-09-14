@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+hermes_home=${HERMES_HOME:-$HOME/.hermes}
+agent_browser_version=0.26.0
+playwright_version=1.62.1
+managed_bin="$hermes_home/node/bin"
+agent_browser_bin="$managed_bin/agent-browser"
+playwright_bin="$managed_bin/playwright"
+
+[[ $EUID -ne 0 ]] || { echo "Run as the dedicated unprivileged Hermes user." >&2; exit 1; }
+[[ $hermes_home == "$HOME/.hermes" ]] || {
+  echo "This bundle requires HERMES_HOME=$HOME/.hermes." >&2
+  exit 1
+}
+[[ $(uname -m) == aarch64 || $(uname -m) == arm64 ]] || {
+  echo "This browser installation is reviewed for ARM64 only." >&2
+  exit 1
+}
+[[ -x $managed_bin/node && -x $managed_bin/npm ]] || {
+  echo "Hermes-managed Node.js/npm is missing; run scripts/install-hermes.sh first." >&2
+  exit 1
+}
+
+export PATH="$managed_bin:$HOME/.local/bin:$PATH"
+installed_agent_browser=$($agent_browser_bin --version 2>/dev/null || true)
+installed_playwright=$($playwright_bin --version 2>/dev/null || true)
+if [[ $installed_agent_browser != *"$agent_browser_version"* \
+  || $installed_playwright != *"$playwright_version"* ]]; then
+  "$managed_bin/npm" install --global --prefix "$hermes_home/node" \
+    --ignore-scripts --no-audit --no-fund \
+    "agent-browser@$agent_browser_version" "playwright@$playwright_version"
+fi
+
+[[ $($agent_browser_bin --version 2>/dev/null || true) == *"$agent_browser_version"* ]] || {
+  echo "agent-browser $agent_browser_version was not installed correctly." >&2
+  exit 1
+}
+[[ $($playwright_bin --version 2>/dev/null || true) == *"$playwright_version"* ]] || {
+  echo "Playwright $playwright_version was not installed correctly." >&2
+  exit 1
+}
+
+# agent-browser's Chrome-for-Testing downloader has no Linux ARM64 build.
+# Playwright publishes native ARM64 Chromium; expose its executable explicitly
+# because agent-browser does not reliably recognize Playwright cache layouts.
+"$playwright_bin" install chromium
+chromium_bin=$(find "$HOME/.cache/ms-playwright" -maxdepth 4 -type f \
+  -perm -u+x \( -name chrome -o -name chromium -o -name chrome-headless-shell \
+    -o -name headless_shell -o -name chromium-browser \) \
+  -print -quit 2>/dev/null)
+if [[ -z $chromium_bin ]]; then
+  echo "No executable Playwright Chromium build was found after installation." >&2
+  exit 1
+fi
+mkdir -p "$hermes_home/bin"
+ln -sfn -- "$chromium_bin" "$hermes_home/bin/chromium"
+[[ -x $hermes_home/bin/chromium ]] || {
+  echo "The managed Chromium link is not executable." >&2
+  exit 1
+}
+
+echo "Installed agent-browser $agent_browser_version with Playwright $playwright_version Chromium."

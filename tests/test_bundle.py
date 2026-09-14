@@ -24,7 +24,7 @@ PROFILE_NAMES = {
 WORKERS = PROFILE_NAMES - {"default"}
 EXPECTED_TOOLSETS = {
     "default": {"kanban", "clarify", "todo", "memory", "session_search"},
-    "researcher": {"web", "file", "terminal", "memory", "session_search"},
+    "researcher": {"web", "browser", "file", "terminal", "memory", "session_search"},
     "coder": {"file", "terminal", "memory"},
     "reviewer": {"file", "terminal", "web"},
     "wiki-maintainer": {"file", "terminal", "memory"},
@@ -74,7 +74,6 @@ class BundleTests(unittest.TestCase):
         forbidden = {
             "code_execution",
             "delegation",
-            "browser",
             "computer_use",
             "messaging",
             "cronjob",
@@ -85,6 +84,39 @@ class BundleTests(unittest.TestCase):
             self.assertIsNotNone(disabled_match, name)
             disabled_text = " ".join(group or "" for group in disabled_match.groups())
             self.assertTrue(forbidden <= set(re.findall(r"[a-z_]+", disabled_text)), name)
+
+    def test_browser_is_hardened_and_limited_to_researcher(self):
+        researcher = read("profiles/researcher/config.yaml")
+        required = (
+            '  backend: "off"',
+            "  cloud_provider: local",
+            "  engine: chrome",
+            "  headed: false",
+            "  inactivity_timeout: 60",
+            "  command_timeout: 30",
+            "  record_sessions: false",
+            "  allow_private_urls: false",
+            "  auto_local_for_private_urls: false",
+            '  cdp_url: ""',
+            "  restrict_evaluate: true",
+            "  allow_unsafe_evaluate: false",
+            "  use_real_profile: false",
+            "  dialog_policy: auto_dismiss",
+            "  dialog_timeout_s: 30",
+        )
+        for setting in required:
+            self.assertIn(setting, researcher)
+        disabled = re.search(r"disabled_toolsets: \[([^]]*)\]", researcher)
+        self.assertIsNotNone(disabled)
+        self.assertNotIn("browser", set(re.findall(r"[a-z_]+", disabled.group(1))))
+
+        for name in PROFILE_NAMES - {"researcher"}:
+            config = read(f"profiles/{name}/config.yaml")
+            disabled_match = re.search(r"disabled_toolsets:\s*(?:\[([^]]*)\]|\n((?:    - .+\n)+))", config)
+            self.assertIsNotNone(disabled_match, name)
+            disabled_text = " ".join(group or "" for group in disabled_match.groups())
+            self.assertIn("browser", set(re.findall(r"[a-z_]+", disabled_text)), name)
+            self.assertNotRegex(config, r"(?m)^browser:$", name)
 
     def test_web_capability_is_limited_to_source_facing_profiles(self):
         web_profiles = {"researcher", "reviewer", "web-scraper", "web-monitor"}
@@ -125,6 +157,11 @@ class BundleTests(unittest.TestCase):
         self.assertIn("GATEWAY_ALLOW_ALL_USERS=false", default_env)
         for name in WORKERS:
             self.assertNotIn("TELEGRAM_", read(f"profiles/{name}/.env.example"), name)
+        self.assertIn("AGENT_BROWSER_EXECUTABLE_PATH=", read("profiles/researcher/.env.example"))
+        self.assertIn(
+            "AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium",
+            read("scripts/bootstrap-user.sh"),
+        )
 
     def test_fallback_policy(self):
         fallback = {"researcher", "wiki-maintainer", "web-scraper", "web-monitor"}
@@ -181,6 +218,7 @@ class BundleTests(unittest.TestCase):
         for name in (
             "install-host.sh",
             "install-hermes.sh",
+            "install-browser.sh",
             "bootstrap-user.sh",
             "lock-images.sh",
             "compose.sh",
@@ -217,10 +255,21 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--force-commit", installer)
         self.assertIn("--no-skills", installer)
         self.assertIn("--non-interactive", installer)
+        self.assertIn("--skip-browser", installer)
+        self.assertIn('bash "$repo_root/scripts/install-browser.sh"', installer)
+
+        browser = read("scripts/install-browser.sh")
+        self.assertIn("agent_browser_version=0.26.0", browser)
+        self.assertIn("playwright_version=1.62.1", browser)
+        self.assertIn("--ignore-scripts", browser)
+        self.assertIn('"$playwright_bin" install chromium', browser)
+        self.assertIn('"$hermes_home/bin/chromium"', browser)
+        self.assertNotIn("browser-use", browser)
 
     def test_hermes_upgrade_uses_locked_environment(self):
         upgrade = read("scripts/upgrade-hermes.sh")
         self.assertIn("uv sync --extra all --locked", upgrade)
+        self.assertIn('bash "$repo_root/scripts/install-browser.sh"', upgrade)
         self.assertNotIn("uv pip install", upgrade)
         self.assertIn("merge-base --is-ancestor", upgrade)
 
@@ -242,9 +291,20 @@ class BundleTests(unittest.TestCase):
     def test_reviewed_tool_inventory_covers_profiles(self):
         inventory = __import__("json").loads(read("policy/tool-inventory.json"))
         self.assertEqual(PROFILE_NAMES, set(inventory))
-        forbidden = {"execute_code", "delegate_task", "computer_use", "send_message", "cronjob"}
+        forbidden = {
+            "execute_code",
+            "delegate_task",
+            "browser_exec",
+            "computer_use",
+            "send_message",
+            "cronjob",
+        }
         for name, tools in inventory.items():
             self.assertFalse(forbidden & set(tools), name)
+            if name == "researcher":
+                self.assertIn("browser_navigate", tools)
+            else:
+                self.assertFalse({tool for tool in tools if tool.startswith("browser_")}, name)
         self.assertIn("todo_list", inventory["default"])
         for name in WORKERS - {"web-monitor"}:
             self.assertIn("process_manage", inventory[name], name)

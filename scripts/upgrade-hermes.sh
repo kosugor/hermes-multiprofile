@@ -91,6 +91,7 @@ git -C "$checkout" merge-base --is-ancestor "$current_commit" "$tag_commit" || {
 git -C "$checkout" checkout --detach "$tag_commit"
 git -C "$checkout" submodule update --init --recursive
 sync_managed_environment
+bash "$repo_root/scripts/install-browser.sh"
 
 for profile in default researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
   if [[ $profile == default ]]; then hermes config check; else hermes -p "$profile" config check; fi

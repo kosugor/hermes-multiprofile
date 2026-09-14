@@ -26,6 +26,7 @@ fi
 
 if [[ -d $checkout/.git ]] && APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh" >/dev/null 2>&1; then
   echo "Hermes is already installed and pinned to $tag."
+  bash "$repo_root/scripts/install-browser.sh"
   exit 0
 fi
 
@@ -59,4 +60,5 @@ git -C "$checkout" fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
   exit 1
 }
 APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh"
+bash "$repo_root/scripts/install-browser.sh"
 echo "Installed Hermes $tag / package 0.21.2 at $release_commit."

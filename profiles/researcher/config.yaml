@@ -25,13 +25,13 @@ agent:
   max_turns: 100
   reasoning_effort: high
   verify_on_stop: false
-  disabled_toolsets: [browser, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
+  disabled_toolsets: [computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [web, file, terminal, memory, session_search]
-  telegram: [web, file, terminal, memory, session_search]
-  api_server: [web, file, terminal, memory, session_search]
-  cron: [web, file, terminal, memory, session_search]
+  cli: [web, browser, file, terminal, memory, session_search]
+  telegram: [web, browser, file, terminal, memory, session_search]
+  api_server: [web, browser, file, terminal, memory, session_search]
+  cron: [web, browser, file, terminal, memory, session_search]
 
 terminal:
   backend: docker
@@ -55,6 +55,23 @@ web:
   extract_backend: firecrawl
   keyless_fallback: false
   keyless_rescue: false
+
+browser:
+  backend: "off"
+  cloud_provider: local
+  engine: chrome
+  headed: false
+  inactivity_timeout: 60
+  command_timeout: 30
+  record_sessions: false
+  allow_private_urls: false
+  auto_local_for_private_urls: false
+  cdp_url: ""
+  restrict_evaluate: true
+  allow_unsafe_evaluate: false
+  use_real_profile: false
+  dialog_policy: auto_dismiss
+  dialog_timeout_s: 30
 
 skills:
   creation_nudge_interval: 0

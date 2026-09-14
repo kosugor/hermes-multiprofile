@@ -24,9 +24,13 @@ starts at one because the target machine has two CPU cores.
 Native Hermes `execute_code` is disabled. File and shell operations use an
 ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
 Reviewer, Web Scraper, and Web Monitor, and calls loopback-only SearXNG and
-Firecrawl services. The sandbox uses a digest-pinned Python 3.11/Node.js 22
-Bookworm base and a date-pinned Debian snapshot for its reviewed build/test
-packages.
+Firecrawl services. Researcher alone also has Hermes' built-in browser tools,
+backed by local headless Chromium; Browser Use CLI mode is forced off, browser
+profiles and recordings are not persisted, and sensitive page-JavaScript
+primitives are restricted. The browser runs as the dedicated `hermes` user and
+is covered by the host UID egress guard. The sandbox uses a digest-pinned Python
+3.11/Node.js 22 Bookworm base and a date-pinned Debian snapshot for its reviewed
+build/test packages.
 
 ## Prerequisites
 
@@ -62,7 +66,9 @@ profiles; backs up an existing profile config before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
 installs user systemd units. Bundled skills are opted out for every profile so
 the positive tool policies remain the only capability surface. Bootstrap does
-not invent or overwrite secrets.
+not invent or overwrite secrets. Browser provisioning installs
+`agent-browser` 0.26.0 and Playwright 1.62.1 exactly, then downloads Playwright's
+ARM64 Chromium build; it deliberately does not install Browser Use CLI.
 The committed `infra/images.lock.env` contains no credentials. Bootstrap
 refuses any non-digest reference or image that does not resolve to ARM64.
 

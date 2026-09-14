@@ -94,6 +94,14 @@ install_profile_files() {
   else
     chmod 0600 "$destination/.env"
   fi
+  if [[ $name == researcher ]]; then
+    if grep -q '^AGENT_BROWSER_EXECUTABLE_PATH=' "$destination/.env"; then
+      sed -i "s|^AGENT_BROWSER_EXECUTABLE_PATH=.*|AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium|" \
+        "$destination/.env"
+    else
+      printf '\nAGENT_BROWSER_EXECUTABLE_PATH=%s\n' "$hermes_home/bin/chromium" >> "$destination/.env"
+    fi
+  fi
 }
 
 install_profile_files default

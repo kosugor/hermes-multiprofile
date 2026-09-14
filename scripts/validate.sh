@@ -7,6 +7,8 @@ sandbox_image=hermes-sandbox:2026.09.11
 soak_hours=0
 online=1
 failures=0
+export PATH="$hermes_home/node/bin:$HOME/.local/bin:$PATH"
+export AGENT_BROWSER_EXECUTABLE_PATH="$hermes_home/bin/chromium"
 
 usage() {
   echo "Usage: $0 [--offline] [--soak-hours N | --no-soak]" >&2
@@ -39,10 +41,20 @@ run_check() {
 [[ $(uname -m) == aarch64 || $(uname -m) == arm64 ]] || fail "host architecture is ARM64"
 [[ -e /sys/fs/cgroup/cgroup.controllers ]] && pass "cgroup v2 is active" || fail "cgroup v2 is active"
 
-for command_name in hermes docker jq curl ss nft; do
+for command_name in hermes agent-browser playwright docker jq curl ss nft; do
   command -v "$command_name" >/dev/null 2>&1 && pass "$command_name is installed" || fail "$command_name is installed"
 done
 (( failures == 0 )) || { echo "Required commands or host features are missing." >&2; exit 1; }
+
+[[ $(agent-browser --version 2>/dev/null || true) == *"0.26.0"* ]] \
+  && pass "agent-browser is pinned to 0.26.0" || fail "agent-browser is pinned to 0.26.0"
+[[ $(playwright --version 2>/dev/null || true) == *"1.62.1"* ]] \
+  && pass "Playwright is pinned to 1.62.1" || fail "Playwright is pinned to 1.62.1"
+[[ -L $hermes_home/bin/chromium && -x $hermes_home/bin/chromium ]] \
+  && pass "ARM64 Playwright Chromium is installed" || fail "ARM64 Playwright Chromium is installed"
+grep -Fxq "AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium" \
+  "$hermes_home/profiles/researcher/.env" 2>/dev/null \
+  && pass "Researcher uses the managed Chromium path" || fail "Researcher uses the managed Chromium path"
 
 export DOCKER_HOST=${DOCKER_HOST:-unix:///run/user/$(id -u)/docker.sock}
 if docker info --format '{{json .SecurityOptions}}' 2>/dev/null | grep -qi rootless; then
@@ -135,6 +147,17 @@ if (( online )); then
   }
   scrape "Firecrawl extracts a static public page" 'https://example.com/'
   scrape "Firecrawl extracts a JavaScript-rendered public page" 'https://quotes.toscrape.com/js/'
+
+  browser_session="hermes-validation-$$"
+  browser_title=
+  if timeout 150 agent-browser --session "$browser_session" open 'https://example.com/' >/dev/null 2>&1 \
+    && browser_title=$(timeout 30 agent-browser --session "$browser_session" get title 2>/dev/null) \
+    && grep -q 'Example Domain' <<<"$browser_title"; then
+    pass "local headless browser opens a public page"
+  else
+    fail "local headless browser opens a public page"
+  fi
+  timeout 30 agent-browser --session "$browser_session" close >/dev/null 2>&1 || true
 fi
 
 for blocked_url in \

@@ -69,7 +69,24 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y ca-certificates curl dbus-user-session fuse-overlayfs git gnupg jq nftables openssl slirp4netns tar uidmap xz-utils
+browser_packages=(
+  fonts-liberation fonts-noto-color-emoji libcairo2 libdbus-1-3 libdrm2
+  libgbm1 libnspr4 libnss3 libpango-1.0-0 libwayland-client0 libx11-6
+  libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0
+  libxrandr2
+)
+if [[ $ID == ubuntu && $VERSION_ID == 24.04 ]]; then
+  browser_packages+=(
+    libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64
+    libcups2t64 libglib2.0-0t64
+  )
+else
+  browser_packages+=(
+    libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcups2
+    libglib2.0-0
+  )
+fi
+apt-get install -y ca-certificates curl dbus-user-session fuse-overlayfs git gnupg jq nftables openssl slirp4netns tar uidmap xz-utils "${browser_packages[@]}"
 
 if ! command -v dockerd-rootless-setuptool.sh >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings
