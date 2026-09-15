@@ -28,8 +28,8 @@ EXPECTED_TOOLSETS = {
     "coder": {"file", "terminal", "memory"},
     "reviewer": {"file", "terminal", "web"},
     "wiki-maintainer": {"file", "terminal", "memory"},
-    "web-scraper": {"web", "file", "terminal"},
-    "web-monitor": {"web", "file"},
+    "web-scraper": {"web", "browser", "file", "terminal"},
+    "web-monitor": {"web", "browser", "file"},
 }
 
 
@@ -106,8 +106,8 @@ class BundleTests(unittest.TestCase):
             disabled_text = " ".join(group or "" for group in disabled_match.groups())
             self.assertTrue(forbidden <= set(re.findall(r"[a-z_]+", disabled_text)), name)
 
-    def test_browser_is_hardened_and_limited_to_researcher(self):
-        researcher = read("profiles/researcher/config.yaml")
+    def test_browser_is_hardened_and_limited_to_approved_profiles(self):
+        browser_profiles = {"researcher", "web-scraper", "web-monitor"}
         required = (
             '  backend: "off"',
             "  cloud_provider: local",
@@ -125,13 +125,15 @@ class BundleTests(unittest.TestCase):
             "  dialog_policy: auto_dismiss",
             "  dialog_timeout_s: 30",
         )
-        for setting in required:
-            self.assertIn(setting, researcher)
-        disabled = re.search(r"disabled_toolsets: \[([^]]*)\]", researcher)
-        self.assertIsNotNone(disabled)
-        self.assertNotIn("browser", set(re.findall(r"[a-z_]+", disabled.group(1))))
+        for name in browser_profiles:
+            config = read(f"profiles/{name}/config.yaml")
+            for setting in required:
+                self.assertIn(setting, config, name)
+            disabled = re.search(r"disabled_toolsets: \[([^]]*)\]", config)
+            self.assertIsNotNone(disabled, name)
+            self.assertNotIn("browser", set(re.findall(r"[a-z_]+", disabled.group(1))), name)
 
-        for name in PROFILE_NAMES - {"researcher"}:
+        for name in PROFILE_NAMES - browser_profiles:
             config = read(f"profiles/{name}/config.yaml")
             disabled_match = re.search(r"disabled_toolsets:\s*(?:\[([^]]*)\]|\n((?:    - .+\n)+))", config)
             self.assertIsNotNone(disabled_match, name)
@@ -378,7 +380,7 @@ class BundleTests(unittest.TestCase):
         }
         for name, tools in inventory.items():
             self.assertFalse(forbidden & set(tools), name)
-            if name == "researcher":
+            if name in {"researcher", "web-scraper", "web-monitor"}:
                 self.assertIn("browser_navigate", tools)
             else:
                 self.assertFalse({tool for tool in tools if tool.startswith("browser_")}, name)

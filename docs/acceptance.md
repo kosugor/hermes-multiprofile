@@ -15,7 +15,8 @@ Start a fresh session on each reachable surface and run `/tools list`. Record
 the result below the matching profile. It must be the exact expansion of the
 configured positive allowlist. Fail if `execute_code`, `delegate_task`,
 `browser_exec`, computer-use tools, messaging, or any undeclared tool appears.
-The ordinary `browser_*` interaction tools are permitted only for Researcher;
+The ordinary `browser_*` interaction tools are permitted only for Researcher,
+Web Scraper, and Web Monitor;
 some CDP, vault, dialog, and vision entries in the reviewed upper bound remain
 runtime-gated and may be absent.
 
@@ -26,8 +27,8 @@ runtime-gated and may be absent.
 | Coder Kanban worker | file, terminal, memory, the reviewed `lcm_*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Reviewer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Wiki Maintainer Kanban worker | file, terminal, memory, the four reviewed read-only `mcp__qmd__*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
-| Web Scraper Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
-| Web Monitor cron worker | web, file |
+| Web Scraper Kanban worker | web, built-in browser, file, terminal, plus Kanban lifecycle tools |
+| Web Monitor cron worker | web, built-in browser, file |
 
 Also inspect a dashboard session. The dashboard must not widen the default
 profile's allowlist. Save all inventories as deployment evidence.
@@ -38,9 +39,10 @@ below `~/.hermes/profiles/coder`. LCM is a host-side plugin, so any additional
 or renamed schema is an unreviewed capability and must fail acceptance.
 
 The automated audit resolves every configured toolset through the installed
-Hermes registry and compares it with `policy/tool-inventory.json`. For
-Researcher it removes the mutually exclusive `browser_exec` surface only after
-verifying `browser.backend: "off"` and every local-browser hardening setting.
+Hermes registry and compares it with `policy/tool-inventory.json`. For each
+browser-enabled profile it removes the mutually exclusive `browser_exec` surface
+only after verifying `browser.backend: "off"` and every local-browser hardening
+setting.
 It separately checks the exact union created when the dispatcher injects Kanban
 lifecycle tools against `policy/kanban-worker-inventory.json`. When a tested
 Hermes patch intentionally changes a toolset, review the new tool before
@@ -52,9 +54,9 @@ For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
 contains no QMD collection-management or write tools. Verify
 `hermes-qmd-index.timer` is active and its most recent service run succeeded.
 
-## Researcher browser fixture
+## Browser-enabled profile fixture
 
-1. Confirm `/tools list` includes `browser_navigate`, `browser_snapshot`, and
+1. For Researcher, Web Scraper, and Web Monitor, confirm `/tools list` includes `browser_navigate`, `browser_snapshot`, and
    `browser_click`, and does not include `browser_exec`.
 2. Navigate to `https://example.com/`, capture a snapshot, and confirm the title
    and page text are returned from the local headless session.

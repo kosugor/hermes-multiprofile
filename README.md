@@ -37,7 +37,8 @@ index and approximately 2 GB of on-demand local models remain under
 Native Hermes `execute_code` is disabled. File and shell operations use an
 ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
 Reviewer, Web Scraper, and Web Monitor, and calls loopback-only SearXNG and
-Firecrawl services. Researcher alone also has Hermes' built-in browser tools,
+Firecrawl services. Researcher, Web Scraper, and Web Monitor also have Hermes'
+built-in browser tools,
 backed by local headless Chromium; Browser Use CLI mode is forced off, browser
 profiles and recordings are not persisted, and sensitive page-JavaScript
 primitives are restricted. The browser runs as the dedicated `hermes` user and

@@ -11,7 +11,7 @@ Choose the least brittle retrieval path:
 
 - `feed` or `blog`: use the canonical RSS/Atom feed when configured; otherwise extract the declared page. Identify entries by stable GUID or canonical URL, then publication time.
 - `reddit`: prefer configured public subreddit/search RSS endpoints; fall back to SearXNG discovery and extract only the public thread pages needed for the digest. Do not vote, comment or log in.
-- `x`: use a configured public feed bridge first, then SearXNG and Camofox for public accounts/queries. Coverage is best-effort without an official API. Record login walls, rate limits and indexing lag.
+- `x`: use a configured public feed bridge first, then SearXNG and the enabled browser for public accounts/queries. Coverage is best-effort without an official API. Record login walls, rate limits and indexing lag.
 - `page` or watched `site` page: extract substantive page content. Normalize navigation, footers, cookie text, generated timestamps and whitespace before comparison. Use the browser only for materially incomplete rendered pages.
 
 For every observation retain source ID, canonical URL, title, published time if present, discovered time, normalized fingerprint, and a short evidence summary. On the first successful check, create a baseline and do not call existing content new unless the prompt explicitly requests catch-up. On later checks, deduplicate against stable IDs and canonical URLs. A hash change is a candidate: report a page change only when substantive meaning, instructions, version, API behavior, availability, or another configured materiality rule changed.

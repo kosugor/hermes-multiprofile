@@ -14,7 +14,7 @@ from toolsets import resolve_toolset
 
 
 PLATFORMS = ("cli", "telegram", "api_server", "cron")
-BROWSER_PROFILE = "researcher"
+BROWSER_PROFILES = {"researcher", "web-scraper", "web-monitor"}
 BROWSER_POLICY = {
     "backend": "off",
     "cloud_provider": "local",
@@ -120,7 +120,7 @@ def main() -> int:
                 failures.append(f"{profile}: qmd MCP policy drift")
         elif mcp_servers:
             failures.append(f"{profile}: unexpected MCP servers={sorted(mcp_servers)}")
-        if profile == BROWSER_PROFILE:
+        if profile in BROWSER_PROFILES:
             if "browser" in disabled:
                 failures.append(f"{profile}: browser must not be disabled")
             for key, required in BROWSER_POLICY.items():
@@ -147,7 +147,7 @@ def main() -> int:
                 resolved.update(PLUGIN_TOOLS.get(plugin_name, ()))
             if profile == QMD_PROFILE and mcp_servers.get("qmd") == QMD_SERVER_POLICY:
                 resolved.update(f"mcp__qmd__{name}" for name in QMD_TOOLS)
-            if profile == BROWSER_PROFILE and browser_config.get("backend") == "off":
+            if profile in BROWSER_PROFILES and browser_config.get("backend") == "off":
                 # The static browser toolset contains both mutually exclusive
                 # surfaces. backend=off makes browser_exec's registry check fail,
                 # leaving only the built-in browser_* tools callable.

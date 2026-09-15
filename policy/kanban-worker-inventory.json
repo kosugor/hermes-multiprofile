@@ -39,6 +39,11 @@
     "process_manage", "read_file", "search_files", "terminal", "write_file"
   ],
   "web-scraper": [
+    "browser_back", "browser_cdp", "browser_click", "browser_console",
+    "browser_dialog", "browser_get_images", "browser_navigate", "browser_press",
+    "browser_scroll", "browser_snapshot", "browser_type", "browser_vault_enter_code",
+    "browser_vault_fill", "browser_vault_list", "browser_vault_save_login",
+    "browser_vault_unlock", "browser_vision",
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
@@ -46,6 +51,11 @@
     "search_files", "terminal", "web_extract", "web_search", "write_file"
   ],
   "web-monitor": [
+    "browser_back", "browser_cdp", "browser_click", "browser_console",
+    "browser_dialog", "browser_get_images", "browser_navigate", "browser_press",
+    "browser_scroll", "browser_snapshot", "browser_type", "browser_vault_enter_code",
+    "browser_vault_fill", "browser_vault_list", "browser_vault_save_login",
+    "browser_vault_unlock", "browser_vision",
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",

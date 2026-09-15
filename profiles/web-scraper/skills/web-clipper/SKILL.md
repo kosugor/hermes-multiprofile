@@ -1,13 +1,13 @@
 ---
 name: web-clipper
-description: Convert a supplied URL into clean Obsidian Markdown using Firecrawl first and Camofox only when extraction needs a real browser.
+description: Convert a supplied URL into clean Obsidian Markdown using Firecrawl first and the enabled browser only when extraction needs a real browser.
 version: 1.0.0
 platforms: [linux]
 metadata:
   hermes:
-    tags: [obsidian, clipping, markdown, firecrawl, camofox]
+    tags: [obsidian, clipping, markdown, firecrawl, browser]
     category: note-taking
-    requires_toolsets: [web, file]
+    requires_toolsets: [web, browser, file]
 ---
 
 # Web Clipper
@@ -26,7 +26,7 @@ A URL supplied by the user or orchestrator.
    - headings/links/code preserved reasonably;
    - no dominant navigation or boilerplate.
 4. If extraction is incomplete, JavaScript-dependent, blocked, or requires
-   interaction, use the Camofox browser to reach the content and capture the
+   interaction, use the enabled browser to reach the content and capture the
    useful body.
 5. Produce clean Markdown:
    - one H1 title;
