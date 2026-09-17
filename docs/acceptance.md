@@ -30,7 +30,7 @@ runtime-gated and may be absent.
 | Web Scraper Kanban worker | web, built-in browser, file, terminal, plus Kanban lifecycle tools |
 | Web Monitor cron worker | web, built-in browser, file |
 
-Also inspect a dashboard session. The dashboard must not widen the default
+Also inspect a dashboard session. The dashboard must not widen the Orchestrator
 profile's allowlist. Save all inventories as deployment evidence.
 
 For Coder, also run `lcm_status` in a fresh session. Confirm the plugin version
@@ -84,8 +84,8 @@ contains no QMD collection-management or write tools. Verify
 ## Telegram authorization fixture
 
 Send a direct message from the configured numeric operator ID and confirm it
-reaches `default`. Then message from a second account and from a group. Neither
-must receive agent access or create a session. Confirm only the default profile
+reaches `orchestrator`. Then message from a second account and from a group. Neither
+must receive agent access or create a session. Confirm only the Orchestrator profile
 contains `TELEGRAM_BOT_TOKEN`.
 
 ## Monitor fixture
@@ -97,7 +97,7 @@ with `scripts/install-monitor.sh`, then:
    source-provided content hash (when Firecrawl exposes one).
 2. Run it unchanged and confirm `[SILENT]` produces no Telegram delivery.
 3. Change material content once and confirm exactly one result reaches
-   `bot-chat:default`.
+   `bot-chat:orchestrator`.
 4. Keep it paused unless a real target, cadence, selector/schema, and material
    change rule have been reviewed.
 

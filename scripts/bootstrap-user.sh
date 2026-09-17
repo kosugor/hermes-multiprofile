@@ -4,7 +4,7 @@ set -Eeuo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hermes_home=${HERMES_HOME:-$HOME/.hermes}
 sandbox_tag=hermes-sandbox:2026.09.11
-expected_profiles=(researcher coder reviewer wiki-maintainer web-scraper web-monitor)
+expected_profiles=(orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor)
 
 # A checkout prepared on Windows may not retain POSIX executable bits. From
 # this point onward all installed helper scripts can be invoked directly.
@@ -76,12 +76,7 @@ timestamp=$(date -u +%Y%m%dT%H%M%SZ)
 
 install_profile_files() {
   local name=$1
-  local destination
-  if [[ $name == default ]]; then
-    destination=$hermes_home
-  else
-    destination="$hermes_home/profiles/$name"
-  fi
+  local destination="$hermes_home/profiles/$name"
   mkdir -p "$destination"
   for filename in config.yaml SOUL.md; do
     if [[ -f "$destination/$filename" ]] && ! cmp -s "$repo_root/profiles/$name/$filename" "$destination/$filename"; then
@@ -104,16 +99,14 @@ install_profile_files() {
   fi
 }
 
-install_profile_files default
-hermes skills opt-out
-
 declare -A descriptions=(
+  [orchestrator]="Routes work through durable Kanban cards and enforces review, isolation, and the human publishing gate."
   [researcher]="Finds and evaluates primary sources, producing cited evidence reports without changing application code."
   [coder]="Implements scoped code changes in isolated Git worktrees, verifies them, and requests independent review."
   [reviewer]="Independently reviews diffs and verification evidence, approving or returning work without editing it."
   [wiki-maintainer]="Maintains the local wiki vault, provenance, links, indexes, and reviewed research summaries."
   [web-scraper]="Performs bounded public-web extraction into structured, provenance-rich task artifacts."
-  [web-monitor]="Runs paused-by-default scheduled page comparisons and reports only material changes."
+  [web-monitor]="Runs scheduled page comparisons in a paused state and reports only material changes."
 )
 
 for profile in "${expected_profiles[@]}"; do
@@ -130,8 +123,6 @@ done
 
 "$repo_root/scripts/install-qmd.sh"
 
-hermes profile rename default Orchestrator
-hermes profile describe default --text "Routes work through durable Kanban cards and enforces review, isolation, and the human publishing gate."
 "$repo_root/scripts/sync-boards.sh"
 
 infra_env="$repo_root/infra/.env"
@@ -175,19 +166,15 @@ for unit in \
 done
 systemctl --user daemon-reload
 
-for profile in default "${expected_profiles[@]}"; do
-  if [[ $profile == default ]]; then
-    hermes config check
-  else
-    hermes -p "$profile" config check
-  fi
+for profile in "${expected_profiles[@]}"; do
+  hermes -p "$profile" config check
 done
 
 cat <<EOF
 Bootstrap complete. Services were installed but not started.
 
 Next:
-  1. Fill ~/.hermes/.env with TELEGRAM_BOT_TOKEN and set both Telegram ID fields to your numeric user ID.
+  1. Fill ~/.hermes/profiles/orchestrator/.env with TELEGRAM_BOT_TOKEN and set both Telegram ID fields to your numeric user ID.
   2. Add OPENROUTER_API_KEY only to fallback-enabled profile .env files.
   3. Run: hermes auth add openai-codex
   4. Enable hermes-web, hermes-gateway, hermes-dashboard, and the QMD index timer.

@@ -51,7 +51,7 @@ EOF
 hermes -p web-monitor cron create "$schedule" "$prompt" \
   --name "$name" \
   --workdir "$wiki_root" \
-  --deliver bot-chat:default \
+  --deliver bot-chat:orchestrator \
   --provider openai-codex \
   --model gpt-5.6-luna \
   --reasoning-effort low \

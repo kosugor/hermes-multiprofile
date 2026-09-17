@@ -7,9 +7,9 @@ wiki_root=${HERMES_WIKI_ROOT:-/srv/hermes/wiki}
 [[ -d $projects_root && -r $projects_root ]] || { echo "Missing projects root: $projects_root" >&2; exit 1; }
 [[ -d $wiki_root && -r $wiki_root ]] || { echo "Missing wiki root: $wiki_root" >&2; exit 1; }
 
-hermes kanban init >/dev/null
+hermes -p orchestrator kanban init >/dev/null
 
-board_json=$(hermes kanban boards list --json)
+board_json=$(hermes -p orchestrator kanban boards list --json)
 board_exists() {
   local slug=$1
   jq -e --arg slug "$slug" '
@@ -21,10 +21,10 @@ board_exists() {
 create_board() {
   local slug=$1 name=$2 description=$3 workdir=$4
   if ! board_exists "$slug"; then
-    hermes kanban boards create "$slug" --name "$name" --description "$description"
-    board_json=$(hermes kanban boards list --json)
+    hermes -p orchestrator kanban boards create "$slug" --name "$name" --description "$description"
+    board_json=$(hermes -p orchestrator kanban boards list --json)
   fi
-  hermes kanban boards set-default-workdir "$slug" "$workdir"
+  hermes -p orchestrator kanban boards set-default-workdir "$slug" "$workdir"
 }
 
 create_board wiki "Wiki Vault" "Reviewed durable knowledge and monitor snapshots" "$wiki_root"

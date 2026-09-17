@@ -93,8 +93,8 @@ git -C "$checkout" submodule update --init --recursive
 sync_managed_environment
 bash "$repo_root/scripts/install-browser.sh"
 
-for profile in default researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
-  if [[ $profile == default ]]; then hermes config check; else hermes -p "$profile" config check; fi
+for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
+  hermes -p "$profile" config check
 done
 APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh"
 systemctl --user start hermes-gateway.service hermes-dashboard.service

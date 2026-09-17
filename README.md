@@ -9,7 +9,7 @@ Docker.
 
 | Canonical profile | Display role | Model | Fallback policy |
 | --- | --- | --- | --- |
-| `default` | Orchestrator | `openai-codex/gpt-5.6-sol` | fail closed |
+| `orchestrator` | Orchestrator | `openai-codex/gpt-5.6-sol` | fail closed |
 | `researcher` | Researcher | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
 | `coder` | Coder + profile-local LCM | `openai-codex/gpt-5.6-sol` | fail closed |
 | `reviewer` | Reviewer | `openai-codex/gpt-5.6-sol` | fail closed |
@@ -17,8 +17,8 @@ Docker.
 | `web-scraper` | Web Scraper | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 | `web-monitor` | Web Monitor | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 
-The default profile owns one multiplexed gateway, the Kanban dispatcher, and
-the only Telegram credential. Named profiles are workers. Kanban concurrency
+The Orchestrator profile owns one multiplexed gateway, the Kanban dispatcher, and
+the only Telegram credential. The other six profiles are workers. Kanban concurrency
 starts at one because the target machine has two CPU cores.
 
 Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
@@ -75,7 +75,7 @@ bash ./scripts/bootstrap-user.sh
 
 The bootstrap is idempotent. It installs the exact Hermes release into the
 supported `~/.hermes/hermes-agent` layout, creates `/srv/hermes/projects`,
-`/srv/hermes/wiki`, and `/srv/hermes/artifacts`; creates the six named Hermes
+`/srv/hermes/wiki`, and `/srv/hermes/artifacts`; creates the seven named Hermes
 profiles; backs up an existing profile config before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
 installs user systemd units. Bundled skills are opted out for every profile so
@@ -100,19 +100,24 @@ authoritative.
 Complete the generated secret files:
 
 ```bash
-editor ~/.hermes/.env
+editor ~/.hermes/profiles/orchestrator/.env
 editor ~/.hermes/profiles/researcher/.env
 editor ~/.hermes/profiles/wiki-maintainer/.env
 editor ~/.hermes/profiles/web-scraper/.env
 editor ~/.hermes/profiles/web-monitor/.env
 ```
 
-Only `~/.hermes/.env` receives `TELEGRAM_BOT_TOKEN`, the single numeric
+Only `~/.hermes/profiles/orchestrator/.env` receives `TELEGRAM_BOT_TOKEN`, the single numeric
 `TELEGRAM_ALLOWED_USERS` operator ID, and `TELEGRAM_ALLOWED_CHATS`. Set both ID
 fields to the same number; the second field makes access DM-only even for the
 operator. The gateway service refuses to start with an empty or broad
 allowlist. Put `OPENROUTER_API_KEY` only in the four fallback-enabled profiles.
 Do not add an OpenAI API key.
+
+For an existing deployment, review and manually transfer the required values
+from `~/.hermes/.env` to `~/.hermes/profiles/orchestrator/.env` before starting
+the updated gateway. Bootstrap deliberately neither reads nor changes the
+built-in `default` profile or its files.
 
 Authenticate interactively with the headless device flow, then start services:
 
@@ -186,7 +191,7 @@ hermes -p web-monitor cron resume vendor-release-notes
 ```
 
 The monitor records snapshots below `/srv/hermes/wiki/monitoring/`, suppresses
-unchanged results with `[SILENT]`, and sends changes to `bot-chat:default` for
+unchanged results with `[SILENT]`, and sends changes to `bot-chat:orchestrator` for
 orchestrator triage.
 
 ## Operations
@@ -195,8 +200,8 @@ orchestrator triage.
 ./scripts/compose.sh ps
 ./scripts/validate.sh
 ./scripts/backup.sh
-hermes cron doctor
-hermes kanban inspect
+hermes -p orchestrator cron doctor
+hermes -p orchestrator kanban inspect
 journalctl --user -u hermes-gateway -f
 ```
 

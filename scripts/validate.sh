@@ -71,8 +71,8 @@ else
   pass "rootless Docker enforces CPU and memory limits"
 fi
 
-expected=(default researcher coder reviewer wiki-maintainer web-scraper web-monitor)
-actual_profile_dirs=(default)
+expected=(orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor)
+actual_profile_dirs=()
 while IFS= read -r name; do actual_profile_dirs+=("$name"); done < <(
   find "$hermes_home/profiles" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort
 )
@@ -84,19 +84,11 @@ fi
 
 profile_listing=$(hermes profile list 2>&1 || true)
 for profile in "${expected[@]}"; do
-  if [[ $profile == default ]]; then
-    grep -q 'Orchestrator' <<<"$profile_listing" && pass "default displays as Orchestrator" || fail "default displays as Orchestrator"
-  else
-    grep -q "$profile" <<<"$profile_listing" && pass "profile exists: $profile" || fail "profile exists: $profile"
-  fi
+  grep -q "$profile" <<<"$profile_listing" && pass "profile exists: $profile" || fail "profile exists: $profile"
 done
 
 for profile in "${expected[@]}"; do
-  if [[ $profile == default ]]; then
-    run_check "config check: default" hermes config check
-  else
-    run_check "config check: $profile" hermes -p "$profile" config check
-  fi
+  run_check "config check: $profile" hermes -p "$profile" config check
 done
 run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
 run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"

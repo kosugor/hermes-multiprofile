@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hermes_home=${HERMES_HOME:-$HOME/.hermes}
-env_file="$hermes_home/.env"
+env_file="$hermes_home/profiles/orchestrator/.env"
 
 [[ -f $env_file ]] || { echo "Gateway secret file is missing: $env_file" >&2; exit 1; }
 [[ $(stat -c '%a' "$env_file") == 600 ]] || { echo "$env_file must have mode 0600." >&2; exit 1; }
@@ -41,10 +41,13 @@ if grep -Eq '^OPENAI_API_KEY=.+$' "$env_file" "$hermes_home"/profiles/*/.env 2>/
   echo "OPENAI_API_KEY is forbidden in this OAuth-only deployment." >&2
   exit 1
 fi
-if grep -RIl '^TELEGRAM_' "$hermes_home/profiles" --include=.env 2>/dev/null | grep -q .; then
-  echo "Telegram credentials or policy appeared in a secondary profile." >&2
-  exit 1
-fi
+for profile_env in "$hermes_home"/profiles/*/.env; do
+  [[ -e $profile_env && $profile_env != "$env_file" ]] || continue
+  if grep -q '^TELEGRAM_' "$profile_env"; then
+    echo "Telegram credentials or policy appeared in a secondary profile: $profile_env" >&2
+    exit 1
+  fi
+done
 
 "$repo_root/scripts/verify-lcm-pin.sh"
 "$repo_root/scripts/verify-qmd-pin.sh"

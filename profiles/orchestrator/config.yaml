@@ -55,8 +55,8 @@ kanban:
   dispatch_interval_seconds: 60
   review_dispatch: true
   auto_decompose: false
-  orchestrator_profile: default
-  default_assignee: default
+  orchestrator_profile: orchestrator
+  default_assignee: orchestrator
   auto_subscribe_on_create: true
   max_in_progress: 1
   max_in_progress_per_profile: 1

@@ -13,7 +13,7 @@ if not BASH and os.name == "nt":
     if git_bash.is_file():
         BASH = str(git_bash)
 PROFILE_NAMES = {
-    "default",
+    "orchestrator",
     "researcher",
     "coder",
     "reviewer",
@@ -21,9 +21,9 @@ PROFILE_NAMES = {
     "web-scraper",
     "web-monitor",
 }
-WORKERS = PROFILE_NAMES - {"default"}
+WORKERS = PROFILE_NAMES - {"orchestrator"}
 EXPECTED_TOOLSETS = {
-    "default": {"kanban", "clarify", "todo", "memory", "session_search"},
+    "orchestrator": {"kanban", "clarify", "todo", "memory", "session_search"},
     "researcher": {"web", "browser", "file", "terminal", "memory", "session_search"},
     "coder": {"file", "terminal", "memory"},
     "reviewer": {"file", "terminal", "web"},
@@ -60,9 +60,21 @@ class BundleTests(unittest.TestCase):
 
     def test_bootstrap_opts_every_profile_out_of_bundled_skills(self):
         bootstrap = read("scripts/bootstrap-user.sh")
-        self.assertIn("hermes skills opt-out", bootstrap)
+        self.assertNotIn("hermes skills opt-out", bootstrap)
         self.assertIn('--no-alias --no-skills', bootstrap)
         self.assertIn('hermes -p "$profile" skills opt-out', bootstrap)
+
+    def test_bootstrap_does_not_touch_builtin_default_profile(self):
+        bootstrap = read("scripts/bootstrap-user.sh")
+        self.assertNotIn("default", bootstrap)
+        self.assertIn('expected_profiles=(orchestrator ', bootstrap)
+        self.assertIn('local destination="$hermes_home/profiles/$name"', bootstrap)
+        self.assertNotIn('destination=$hermes_home', bootstrap)
+
+        gateway = read("systemd/hermes-gateway.service.in")
+        dashboard = read("systemd/hermes-dashboard.service.in")
+        self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace", gateway)
+        self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator dashboard", dashboard)
 
     def test_openai_runtime_is_explicitly_auto(self):
         for name in PROFILE_NAMES:
@@ -173,11 +185,11 @@ class BundleTests(unittest.TestCase):
             self.assertNotIn("docker.sock", config)
             self.assertNotIn("docker_volumes:", config)
 
-    def test_default_is_only_profile_with_telegram_secret(self):
-        default_env = read("profiles/default/.env.example")
-        self.assertIn("TELEGRAM_BOT_TOKEN=", default_env)
-        self.assertIn("TELEGRAM_ALLOWED_CHATS=", default_env)
-        self.assertIn("GATEWAY_ALLOW_ALL_USERS=false", default_env)
+    def test_orchestrator_is_only_profile_with_telegram_secret(self):
+        orchestrator_env = read("profiles/orchestrator/.env.example")
+        self.assertIn("TELEGRAM_BOT_TOKEN=", orchestrator_env)
+        self.assertIn("TELEGRAM_ALLOWED_CHATS=", orchestrator_env)
+        self.assertIn("GATEWAY_ALLOW_ALL_USERS=false", orchestrator_env)
         for name in WORKERS:
             self.assertNotIn("TELEGRAM_", read(f"profiles/{name}/.env.example"), name)
         self.assertIn("AGENT_BROWSER_EXECUTABLE_PATH=", read("profiles/researcher/.env.example"))
@@ -230,16 +242,19 @@ class BundleTests(unittest.TestCase):
         self.assertIn("%h/.cache/qmd", gateway)
         self.assertIn("hermes-qmd-index.timer", bootstrap)
 
-    def test_monitor_installs_paused_with_default_delivery(self):
+    def test_monitor_installs_paused_with_orchestrator_delivery(self):
         script = read("scripts/install-monitor.sh")
         self.assertIn("--paused", script)
-        self.assertIn("--deliver bot-chat:default", script)
+        self.assertIn("--deliver bot-chat:orchestrator", script)
         self.assertNotIn(" cron resume ", script)
         self.assertIn("MONITOR_SCHEMA", script)
         self.assertIn("Set MONITOR_SELECTOR, MONITOR_SCHEMA, or both.", script)
 
     def test_board_sync_uses_pinned_cli_and_accepts_list_json(self):
         script = read("scripts/sync-boards.sh")
+        self.assertIn("hermes -p orchestrator kanban init", script)
+        self.assertIn("hermes -p orchestrator kanban boards list --json", script)
+        self.assertIn("hermes -p orchestrator kanban boards create", script)
         self.assertIn("boards set-default-workdir", script)
         self.assertNotIn("boards set-workdir", script)
         self.assertIn('if type == "array"', script)
@@ -362,7 +377,7 @@ class BundleTests(unittest.TestCase):
     def test_gateway_has_fail_closed_preflight(self):
         unit = read("systemd/hermes-gateway.service.in")
         self.assertIn("ExecStartPre=@DEPLOY_DIR@/scripts/gateway-preflight.sh", unit)
-        self.assertIn("ExecStart=@HERMES_BIN@ gateway run --replace", unit)
+        self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace", unit)
         preflight = read("scripts/gateway-preflight.sh")
         self.assertIn("TELEGRAM_ALLOWED_CHATS must equal the operator ID", preflight)
         self.assertIn("OPENAI_API_KEY is forbidden", preflight)
@@ -384,7 +399,7 @@ class BundleTests(unittest.TestCase):
                 self.assertIn("browser_navigate", tools)
             else:
                 self.assertFalse({tool for tool in tools if tool.startswith("browser_")}, name)
-        self.assertIn("todo_list", inventory["default"])
+        self.assertIn("todo_list", inventory["orchestrator"])
         for name in WORKERS - {"web-monitor"}:
             self.assertIn("process_manage", inventory[name], name)
         self.assertNotIn("process", {tool for tools in inventory.values() for tool in tools})
@@ -392,7 +407,7 @@ class BundleTests(unittest.TestCase):
 
         workers = __import__("json").loads(read("policy/kanban-worker-inventory.json"))
         self.assertEqual(WORKERS, set(workers))
-        injected = {tool for tool in inventory["default"] if tool.startswith("kanban_")}
+        injected = {tool for tool in inventory["orchestrator"] if tool.startswith("kanban_")}
         for name in WORKERS:
             self.assertEqual(set(inventory[name]) | injected, set(workers[name]), name)
 
