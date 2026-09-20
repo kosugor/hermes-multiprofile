@@ -48,6 +48,24 @@ lifecycle tools against `policy/kanban-worker-inventory.json`. When a tested
 Hermes patch intentionally changes a toolset, review the new tool before
 updating either policy file.
 
+The audit also enforces the profile capability policy:
+
+- `memory` is available only to Orchestrator, Researcher, Coder, and Wiki
+  Maintainer. Reviewer, Web Scraper, and Web Monitor must have it explicitly
+  disabled; their state is kept in review artifacts or monitor snapshots.
+- `skills` and `skills_hub` are disabled everywhere. Profile-local reviewed
+  skills are installed separately and are not permission-granting toolsets.
+- `kanban` is standing only for Orchestrator and is dispatcher-injected for
+  workers. `clarify` is Orchestrator-only.
+- `code_execution`, `delegation`, `messaging`, and `cronjob` are disabled for
+  every profile. Telegram is a gateway adapter, not an agent-callable messaging
+  tool; Web Monitor's host cron job is operator-managed.
+- Coder must select `context.engine: lcm`; every other profile must explicitly
+  select the built-in `compressor` engine.
+- `observability/langfuse` is enabled for every profile but contributes no
+  callable tools. Deployment validation requires the pinned SDK, HTTPS endpoint,
+  profile-scoped environment label, and `HERMES_LANGFUSE_CAPTURE=metadata`.
+
 For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
 `wiki` at `/srv/hermes/wiki`. Search for a known canonical page with
 `mcp__qmd__query`, retrieve it with `mcp__qmd__get`, and confirm `/tools list`

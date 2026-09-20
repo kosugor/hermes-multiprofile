@@ -15,6 +15,7 @@ updates:
 plugins:
   enabled:
     - hermes-lcm
+    - observability/langfuse
 
 context:
   engine: lcm

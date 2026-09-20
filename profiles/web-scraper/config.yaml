@@ -7,6 +7,13 @@ model:
   default: gpt-5.6-luna
   openai_runtime: auto
 
+plugins:
+  enabled:
+    - observability/langfuse
+
+context:
+  engine: compressor
+
 updates:
   check: false
   pre_update_backup: full

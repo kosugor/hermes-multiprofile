@@ -98,7 +98,18 @@ class BundleTests(unittest.TestCase):
                 self.assertIn("context:\n  engine: lcm", config)
             else:
                 self.assertNotIn("hermes-lcm", config, name)
-                self.assertNotIn("engine: lcm", config, name)
+                self.assertIn("context:\n  engine: compressor", config, name)
+
+    def test_langfuse_is_enabled_with_metadata_capture_for_every_profile(self):
+        for name in PROFILE_NAMES:
+            config = read(f"profiles/{name}/config.yaml")
+            self.assertIn("observability/langfuse", config, name)
+            env = read(f"profiles/{name}/.env.example")
+            self.assertIn("HERMES_LANGFUSE_PUBLIC_KEY=", env, name)
+            self.assertIn("HERMES_LANGFUSE_SECRET_KEY=", env, name)
+            self.assertIn("HERMES_LANGFUSE_CAPTURE=metadata", env, name)
+            self.assertIn("HERMES_LANGFUSE_RELEASE=v2026.9.11", env, name)
+            self.assertIn(f"HERMES_LANGFUSE_ENV=production-{name}", env, name)
 
     def test_qmd_is_read_only_and_limited_to_wiki_maintainer(self):
         wiki = read("profiles/wiki-maintainer/config.yaml")
@@ -312,6 +323,8 @@ class BundleTests(unittest.TestCase):
             "verify-hermes-pin.sh",
             "verify-lcm-pin.sh",
             "verify-qmd-pin.sh",
+            "verify-langfuse-pin.sh",
+            "install-langfuse.sh",
             "verify-images.sh",
             "upgrade-hermes.sh",
         ):
@@ -408,8 +421,23 @@ class BundleTests(unittest.TestCase):
             self.assertNotIn("/vault", text, skill)
             self.assertNotIn("/monitor/", text, skill)
             self.assertNotIn("Camofox", text, skill)
-        coder_skills = read("profiles/coder/SKILLS.md")
-        self.assertIn("no web or browser toolset", coder_skills)
+        coder_soul = read("profiles/coder/SOUL.md")
+        self.assertRegex(coder_soul, r"no web or\s+browser tools")
+        expected_skills = {
+            "orchestrator": set(),
+            "researcher": {"deep-web-research", "verify-research-claims"},
+            "coder": {"coding-workflow", "diagnose-and-fix", "implement-project-change"},
+            "reviewer": {"independent-review"},
+            "wiki-maintainer": {"audit-vault-links", "maintain-obsidian-wiki", "scheduled-wiki-maintenance"},
+            "web-scraper": {"web-clipper"},
+            "web-monitor": {"manage-web-watchlist", "run-web-monitor"},
+        }
+        for name, expected in expected_skills.items():
+            actual = {
+                path.name for path in (ROOT / "profiles" / name / "skills").iterdir()
+                if path.is_dir() and (path / "SKILL.md").is_file()
+            } if (ROOT / "profiles" / name / "skills").is_dir() else set()
+            self.assertEqual(expected, actual, name)
 
     def test_gateway_has_fail_closed_preflight(self):
         unit = read("systemd/hermes-gateway.service.in")
@@ -461,6 +489,12 @@ class BundleTests(unittest.TestCase):
         for name in PROFILE_NAMES - {"coder"}:
             self.assertFalse(lcm_tools & set(inventory[name]), name)
 
+        for name in PROFILE_NAMES & {"orchestrator", "researcher", "coder", "wiki-maintainer"}:
+            self.assertIn("memory", inventory[name], name)
+        for name in PROFILE_NAMES - {"orchestrator", "researcher", "coder", "wiki-maintainer"}:
+            self.assertNotIn("memory", inventory[name], name)
+        self.assertIn('"observability/langfuse"', read("scripts/audit-tools.py"))
+
         qmd_tools = {
             "mcp__qmd__query", "mcp__qmd__get",
             "mcp__qmd__multi_get", "mcp__qmd__status",
@@ -507,11 +541,23 @@ class BundleTests(unittest.TestCase):
         self.assertIn('--profiles-root "$hermes_home/profiles"', validate)
         self.assertIn("--core-web", validate)
         self.assertIn("QMD embed timer is active", validate)
+        self.assertIn('"$repo_root/scripts/verify-langfuse-pin.sh"', validate)
+        self.assertIn("HERMES_LANGFUSE_CAPTURE", validate)
+        self.assertIn("production-$profile", validate)
+        gateway = read("scripts/gateway-preflight.sh")
+        self.assertIn('"$repo_root/scripts/verify-langfuse-pin.sh"', gateway)
+        self.assertIn('hermes -p "$profile" config check', gateway)
         self.assertNotIn('--user "$(id -u):$(id -g)" --read-only', validate)
+
+    def test_langfuse_lock_is_hash_pinned(self):
+        lock = read("langfuse/requirements.txt")
+        self.assertRegex(lock, r"(?m)^langfuse==4\.14\.1 \\\n")
+        self.assertRegex(lock, r"(?m)^    --hash=sha256:[0-9a-f]{64}$")
+        self.assertIn("langfuse==4.14.1", read("langfuse/requirements.in"))
 
     def test_no_committed_secret_values(self):
         secret_assignment = re.compile(
-            r"(?mi)^(?:TELEGRAM_BOT_TOKEN|OPENROUTER_API_KEY|POSTGRES_PASSWORD|BULL_AUTH_KEY)=(.+)$"
+            r"(?mi)^(?:TELEGRAM_BOT_TOKEN|OPENROUTER_API_KEY|POSTGRES_PASSWORD|BULL_AUTH_KEY|HERMES_LANGFUSE_PUBLIC_KEY|HERMES_LANGFUSE_SECRET_KEY)=(.+)$"
         )
         for path in ROOT.rglob("*"):
             if not path.is_file() or ".git" in path.parts or path.name == "test_bundle.py":

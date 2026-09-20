@@ -26,6 +26,13 @@ Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
 Its raw messages and summary DAG remain inside the Coder profile and are covered
 by the normal Hermes state backup.
 
+Memory is deliberately role-scoped: Orchestrator, Researcher, Coder, and Wiki
+Maintainer use profile-local built-in memory; Reviewer, Web Scraper, and Web
+Monitor keep memory disabled for independence or deterministic file-backed
+state. No cloud or shared memory provider is configured. All profiles enable
+the bundled Langfuse observability plugin in metadata-only capture mode, with
+per-profile environment labels; it adds no model-callable tools.
+
 Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
 `/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
 checksum pinned. It runs locally in stdio mode and exposes only query,
@@ -104,6 +111,8 @@ Complete the generated secret files:
 ```bash
 editor ~/.hermes/profiles/orchestrator/.env
 editor ~/.hermes/profiles/researcher/.env
+editor ~/.hermes/profiles/coder/.env
+editor ~/.hermes/profiles/reviewer/.env
 editor ~/.hermes/profiles/wiki-maintainer/.env
 editor ~/.hermes/profiles/web-scraper/.env
 editor ~/.hermes/profiles/web-monitor/.env
@@ -114,6 +123,12 @@ Only `~/.hermes/profiles/orchestrator/.env` receives `TELEGRAM_BOT_TOKEN`, the s
 fields to the same number; the second field makes access DM-only even for the
 operator. The gateway service refuses to start with an empty or broad
 allowlist. Put `OPENROUTER_API_KEY` only in the four fallback-enabled profiles.
+
+Every profile also requires operator-supplied Langfuse credentials in its `.env`:
+`HERMES_LANGFUSE_PUBLIC_KEY` (`pk-lf-...`), `HERMES_LANGFUSE_SECRET_KEY`
+(`sk-lf-...`), and an HTTPS `HERMES_LANGFUSE_BASE_URL`. Keep
+`HERMES_LANGFUSE_CAPTURE=metadata`; the validator rejects missing credentials,
+non-HTTPS endpoints, or a different capture mode.
 Do not add an OpenAI API key.
 
 For an existing deployment, review and manually transfer the required values

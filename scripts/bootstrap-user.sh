@@ -129,6 +129,7 @@ for profile in "${expected_profiles[@]}"; do
 done
 
 "$repo_root/scripts/install-qmd.sh"
+"$repo_root/scripts/install-langfuse.sh"
 
 "$repo_root/scripts/sync-boards.sh"
 
@@ -185,7 +186,8 @@ Bootstrap complete. Services were installed but not started.
 Next:
   1. Fill ~/.hermes/profiles/orchestrator/.env with TELEGRAM_BOT_TOKEN and set both Telegram ID fields to your numeric user ID.
   2. Add OPENROUTER_API_KEY only to fallback-enabled profile .env files.
-  3. Run: hermes auth add openai-codex
-  4. Enable hermes-web, hermes-gateway, hermes-dashboard, the QMD index timer, and the QMD embed timer.
-  5. Run: $repo_root/scripts/validate.sh
+  3. Fill the Langfuse key and HTTPS endpoint fields in every profile .env; capture mode is metadata-only and validation requires them.
+  4. Run: hermes auth add openai-codex
+  5. Enable hermes-web, hermes-gateway, hermes-dashboard, the QMD index timer, and the QMD embed timer.
+  6. Run: $repo_root/scripts/validate.sh
 EOF

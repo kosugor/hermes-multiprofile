@@ -51,5 +51,22 @@ done
 
 "$repo_root/scripts/verify-lcm-pin.sh"
 "$repo_root/scripts/verify-qmd-pin.sh"
+"$repo_root/scripts/verify-langfuse-pin.sh"
 
-echo "Gateway preflight passed: one operator, one DM chat, no group access, no OpenAI API key, reviewed local plugins."
+for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
+  profile_env="$hermes_home/profiles/$profile/.env"
+  [[ -f $profile_env ]] || { echo "Missing profile environment: $profile_env" >&2; exit 1; }
+  profile_value() {
+    local key=$1
+    sed -n "s/^${key}=//p" "$profile_env" | tail -n 1 | tr -d '\r'
+  }
+  [[ $(profile_value HERMES_LANGFUSE_PUBLIC_KEY) =~ ^pk-lf- ]] || { echo "$profile Langfuse public key is invalid." >&2; exit 1; }
+  [[ $(profile_value HERMES_LANGFUSE_SECRET_KEY) =~ ^sk-lf- ]] || { echo "$profile Langfuse secret key is invalid." >&2; exit 1; }
+  [[ $(profile_value HERMES_LANGFUSE_BASE_URL) =~ ^https://[^[:space:]]+$ ]] || { echo "$profile Langfuse endpoint must use HTTPS." >&2; exit 1; }
+  [[ $(profile_value HERMES_LANGFUSE_CAPTURE) == metadata ]] || { echo "$profile Langfuse capture must be metadata." >&2; exit 1; }
+  [[ $(profile_value HERMES_LANGFUSE_ENV) == production-$profile ]] || { echo "$profile Langfuse environment label is invalid." >&2; exit 1; }
+  [[ $(profile_value HERMES_LANGFUSE_RELEASE) == v2026.9.11 ]] || { echo "$profile Langfuse release is invalid." >&2; exit 1; }
+  hermes -p "$profile" config check >/dev/null
+done
+
+echo "Gateway preflight passed: one operator, one DM chat, no group access, no OpenAI API key, reviewed local plugins and Langfuse SDK."

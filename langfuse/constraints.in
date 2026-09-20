@@ -1,0 +1,7 @@
+# Keep the Langfuse SDK compatible with the pinned Hermes 0.21.2 runtime.
+certifi==2026.5.20
+httpx==0.28.1
+packaging==26.0
+pydantic==2.13.4
+requests==2.33.0
+urllib3>=2.7.0,<3

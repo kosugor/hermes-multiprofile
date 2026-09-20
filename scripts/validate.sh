@@ -104,6 +104,28 @@ run_check "Wiki Maintainer QMD index is readable" \
     "QMD_CONFIG_DIR=$hermes_home/profiles/wiki-maintainer/qmd" \
     QMD_FORCE_CPU=1 \
     "$hermes_home/qmd-runtime/node_modules/.bin/qmd" status
+run_check "Langfuse SDK is pinned" "$repo_root/scripts/verify-langfuse-pin.sh"
+
+dotenv_value() {
+  local env_file=$1 key=$2
+  sed -n "s/^${key}=//p" "$env_file" | tail -n 1 | tr -d '\r'
+}
+
+for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
+  profile_env="$hermes_home/profiles/$profile/.env"
+  langfuse_public=$(dotenv_value "$profile_env" HERMES_LANGFUSE_PUBLIC_KEY 2>/dev/null || true)
+  langfuse_secret=$(dotenv_value "$profile_env" HERMES_LANGFUSE_SECRET_KEY 2>/dev/null || true)
+  langfuse_base=$(dotenv_value "$profile_env" HERMES_LANGFUSE_BASE_URL 2>/dev/null || true)
+  langfuse_capture=$(dotenv_value "$profile_env" HERMES_LANGFUSE_CAPTURE 2>/dev/null || true)
+  langfuse_env=$(dotenv_value "$profile_env" HERMES_LANGFUSE_ENV 2>/dev/null || true)
+  langfuse_release=$(dotenv_value "$profile_env" HERMES_LANGFUSE_RELEASE 2>/dev/null || true)
+  [[ $langfuse_public =~ ^pk-lf- ]] && pass "$profile Langfuse public key is configured" || fail "$profile Langfuse public key is configured"
+  [[ $langfuse_secret =~ ^sk-lf- ]] && pass "$profile Langfuse secret key is configured" || fail "$profile Langfuse secret key is configured"
+  [[ $langfuse_base =~ ^https://[^[:space:]]+$ ]] && pass "$profile Langfuse endpoint is HTTPS" || fail "$profile Langfuse endpoint is HTTPS"
+  [[ $langfuse_capture == metadata ]] && pass "$profile Langfuse capture is metadata-only" || fail "$profile Langfuse capture is metadata-only"
+  [[ $langfuse_env == production-$profile ]] && pass "$profile Langfuse environment is profile-scoped" || fail "$profile Langfuse environment is profile-scoped"
+  [[ $langfuse_release == v2026.9.11 ]] && pass "$profile Langfuse release is pinned" || fail "$profile Langfuse release is pinned"
+done
 
 hermes_script=$(readlink -f -- "$(command -v hermes)")
 hermes_python=$(sed -n '1s/^#!//p' "$hermes_script")

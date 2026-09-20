@@ -58,6 +58,35 @@ PLUGIN_TOOLS = {
         "lcm_retrieve",
         "lcm_status",
     },
+    # Observability hooks do not add model-callable tools.
+    "observability/langfuse": set(),
+}
+EXPECTED_CONTEXT_ENGINE = {
+    "orchestrator": "compressor",
+    "researcher": "compressor",
+    "coder": "lcm",
+    "reviewer": "compressor",
+    "wiki-maintainer": "compressor",
+    "web-scraper": "compressor",
+    "web-monitor": "compressor",
+}
+EXPECTED_PLUGINS = {
+    profile: ({"hermes-lcm", "observability/langfuse"} if profile == "coder"
+              else {"observability/langfuse"})
+    for profile in EXPECTED_CONTEXT_ENGINE
+}
+MEMORY_PROFILES = {"orchestrator", "researcher", "coder", "wiki-maintainer"}
+REQUIRED_DISABLED_TOOLSETS = {
+    "code_execution", "delegation", "messaging", "cronjob", "skills", "skills_hub",
+}
+EXPECTED_SKILLS = {
+    "orchestrator": set(),
+    "researcher": {"deep-web-research", "verify-research-claims"},
+    "coder": {"coding-workflow", "diagnose-and-fix", "implement-project-change"},
+    "reviewer": {"independent-review"},
+    "wiki-maintainer": {"audit-vault-links", "maintain-obsidian-wiki", "scheduled-wiki-maintenance"},
+    "web-scraper": {"web-clipper"},
+    "web-monitor": {"manage-web-watchlist", "run-web-monitor"},
 }
 QMD_PROFILE = "wiki-maintainer"
 QMD_TOOLS = {"query", "get", "multi_get", "status"}
@@ -116,6 +145,17 @@ def main() -> int:
         enabled_plugins = set((config.get("plugins") or {}).get("enabled") or ())
         mcp_servers = config.get("mcp_servers") or {}
         context_engine = (config.get("context") or {}).get("engine")
+        expected_context = EXPECTED_CONTEXT_ENGINE[profile]
+        if context_engine != expected_context:
+            failures.append(
+                f"{profile}: context.engine must be {expected_context!r}; "
+                f"found {context_engine!r}"
+            )
+        if enabled_plugins != EXPECTED_PLUGINS[profile]:
+            failures.append(
+                f"{profile}: plugins.enabled drift; expected={sorted(EXPECTED_PLUGINS[profile])}, "
+                f"found={sorted(enabled_plugins)}"
+            )
         unknown_plugins = enabled_plugins - PLUGIN_TOOLS.keys()
         if unknown_plugins:
             failures.append(f"{profile}: unreviewed plugins={sorted(unknown_plugins)}")
@@ -123,6 +163,33 @@ def main() -> int:
             failures.append(f"{profile}: lcm context engine requires hermes-lcm")
         if "hermes-lcm" in enabled_plugins and context_engine != "lcm":
             failures.append(f"{profile}: hermes-lcm must be the selected context engine")
+        if "memory" in disabled and profile in MEMORY_PROFILES:
+            failures.append(f"{profile}: memory must be enabled")
+        if "memory" not in disabled and profile not in MEMORY_PROFILES:
+            failures.append(f"{profile}: memory must be explicitly disabled")
+        if profile in MEMORY_PROFILES and "memory" not in expected_names:
+            failures.append(f"{profile}: reviewed inventory must include memory")
+        if profile not in MEMORY_PROFILES and "memory" in expected_names:
+            failures.append(f"{profile}: reviewed inventory must not include memory")
+        if config.get("memory"):
+            provider = (config.get("memory") or {}).get("provider")
+            if provider not in (None, "local", "builtin"):
+                failures.append(f"{profile}: external memory provider is not permitted: {provider!r}")
+        if not REQUIRED_DISABLED_TOOLSETS <= disabled:
+            failures.append(
+                f"{profile}: required disabled toolsets missing="
+                f"{sorted(REQUIRED_DISABLED_TOOLSETS - disabled)}"
+            )
+        skills_root = profiles_root / profile / "skills"
+        actual_skills = {
+            path.name for path in skills_root.iterdir()
+            if path.is_dir() and not path.is_symlink() and (path / "SKILL.md").is_file()
+        } if skills_root.is_dir() else set()
+        if actual_skills != EXPECTED_SKILLS[profile]:
+            failures.append(
+                f"{profile}: local skills drift; expected={sorted(EXPECTED_SKILLS[profile])}, "
+                f"found={sorted(actual_skills)}"
+            )
         if profile == QMD_PROFILE:
             if set(mcp_servers) != {"qmd"}:
                 failures.append(f"{profile}: expected only the reviewed qmd MCP server")
@@ -150,6 +217,11 @@ def main() -> int:
             if not isinstance(declared, list) or not declared:
                 failures.append(f"{profile}:{platform}: missing positive allowlist")
                 continue
+            if profile == "orchestrator":
+                if "kanban" not in declared or "clarify" not in declared:
+                    failures.append(f"{profile}:{platform}: kanban and clarify are required")
+            elif "kanban" in declared or "clarify" in declared:
+                failures.append(f"{profile}:{platform}: kanban/clarify must not be standing toolsets")
             resolved: set[str] = set()
             for toolset_name in declared:
                 resolved.update(resolve_toolset(str(toolset_name)))

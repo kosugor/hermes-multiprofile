@@ -92,6 +92,7 @@ git -C "$checkout" checkout --detach "$tag_commit"
 git -C "$checkout" submodule update --init --recursive
 sync_managed_environment
 bash "$repo_root/scripts/install-browser.sh"
+bash "$repo_root/scripts/install-langfuse.sh"
 
 for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
   hermes -p "$profile" config check
