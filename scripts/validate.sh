@@ -6,17 +6,19 @@ hermes_home=${HERMES_HOME:-$HOME/.hermes}
 sandbox_image=hermes-sandbox:2026.09.11
 soak_hours=0
 online=1
+web_mode=full
 failures=0
 export PATH="$hermes_home/node/bin:$HOME/.local/bin:$PATH"
 export AGENT_BROWSER_EXECUTABLE_PATH="$hermes_home/bin/chromium"
 
 usage() {
-  echo "Usage: $0 [--offline] [--soak-hours N | --no-soak]" >&2
+  echo "Usage: $0 [--offline] [--core-web] [--soak-hours N | --no-soak]" >&2
 }
 
 while (($#)); do
   case "$1" in
     --offline) online=0; shift ;;
+    --core-web) web_mode=core; shift ;;
     --soak-hours)
       [[ $# -ge 2 && $2 =~ ^[0-9]+$ ]] || { usage; exit 2; }
       soak_hours=$2
@@ -52,9 +54,12 @@ done
   && pass "Playwright is pinned to 1.62.1" || fail "Playwright is pinned to 1.62.1"
 [[ -L $hermes_home/bin/chromium && -x $hermes_home/bin/chromium ]] \
   && pass "ARM64 Playwright Chromium is installed" || fail "ARM64 Playwright Chromium is installed"
-grep -Fxq "AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium" \
-  "$hermes_home/profiles/researcher/.env" 2>/dev/null \
-  && pass "Researcher uses the managed Chromium path" || fail "Researcher uses the managed Chromium path"
+for browser_profile in researcher web-scraper web-monitor; do
+  grep -Fxq "AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium" \
+    "$hermes_home/profiles/$browser_profile/.env" 2>/dev/null \
+    && pass "$browser_profile uses the managed Chromium path" \
+    || fail "$browser_profile uses the managed Chromium path"
+done
 
 export DOCKER_HOST=${DOCKER_HOST:-unix:///run/user/$(id -u)/docker.sock}
 if docker info --format '{{json .SecurityOptions}}' 2>/dev/null | grep -qi rootless; then
@@ -104,7 +109,8 @@ hermes_script=$(readlink -f -- "$(command -v hermes)")
 hermes_python=$(sed -n '1s/^#!//p' "$hermes_script")
 if [[ -x $hermes_python ]]; then
   run_check "resolved tool inventories match the reviewed allowlist" \
-    "$hermes_python" "$repo_root/scripts/audit-tools.py" --bundle "$repo_root"
+    "$hermes_python" "$repo_root/scripts/audit-tools.py" --bundle "$repo_root" \
+    --profiles-root "$hermes_home/profiles"
 else
   fail "could not resolve Hermes managed Python for tool inventory audit"
 fi
@@ -112,12 +118,17 @@ fi
 run_check "Compose resolves only locked image variables" "$repo_root/scripts/compose.sh" config
 running_output=$("$repo_root/scripts/compose.sh" ps --status running -q 2>/dev/null || true)
 running_count=$(grep -c . <<<"$running_output" || true)
-[[ $running_count -eq 7 ]] && pass "all seven web-stack containers are running" || fail "all seven web-stack containers are running (found $running_count)"
+expected_containers=7
+[[ $web_mode == core ]] && expected_containers=2
+[[ $running_count -eq $expected_containers ]] \
+  && pass "$web_mode web-stack containers are running" \
+  || fail "$web_mode web-stack containers are running (found $running_count)"
 
 run_check "gateway systemd service is active" systemctl --user is-active --quiet hermes-gateway.service
 run_check "dashboard systemd service is active" systemctl --user is-active --quiet hermes-dashboard.service
 run_check "web systemd service is active" systemctl --user is-active --quiet hermes-web.service
 run_check "QMD index timer is active" systemctl --user is-active --quiet hermes-qmd-index.timer
+run_check "QMD embed timer is active" systemctl --user is-active --quiet hermes-qmd-embed.timer
 
 unexpected_listeners=$(ss -H -lnt | awk '
   $4 ~ /:(3002|8888|9119)$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print }
@@ -132,11 +143,15 @@ searx_response=$(curl --fail --silent --show-error --max-time 30 \
 jq -e '.results | type == "array"' <<<"$searx_response" >/dev/null 2>&1 \
   && pass "SearXNG JSON endpoint works" || fail "SearXNG JSON endpoint works"
 
-firecrawl_health=$(curl --fail --silent --show-error --max-time 20 \
-  'http://127.0.0.1:3002/v0/health/liveness' 2>/dev/null || true)
-[[ -n $firecrawl_health ]] && pass "Firecrawl liveness endpoint works" || fail "Firecrawl liveness endpoint works"
+if [[ $web_mode == full ]]; then
+  firecrawl_health=$(curl --fail --silent --show-error --max-time 20 \
+    'http://127.0.0.1:3002/v0/health/liveness' 2>/dev/null || true)
+  [[ -n $firecrawl_health ]] && pass "Firecrawl liveness endpoint works" || fail "Firecrawl liveness endpoint works"
+else
+  pass "Firecrawl extraction stack is intentionally stopped"
+fi
 
-if (( online )); then
+if (( online )) && [[ $web_mode == full ]]; then
   scrape() {
     local label=$1 url=$2 response
     response=$(curl --fail --silent --show-error --max-time 120 \
@@ -149,6 +164,9 @@ if (( online )); then
   scrape "Firecrawl extracts a static public page" 'https://example.com/'
   scrape "Firecrawl extracts a JavaScript-rendered public page" 'https://quotes.toscrape.com/js/'
 
+fi
+
+if (( online )); then
   browser_session="hermes-validation-$$"
   browser_title=
   if timeout 150 agent-browser --session "$browser_session" open 'https://example.com/' >/dev/null 2>&1 \
@@ -161,6 +179,7 @@ if (( online )); then
   timeout 30 agent-browser --session "$browser_session" close >/dev/null 2>&1 || true
 fi
 
+if [[ $web_mode == full ]]; then
 for blocked_url in \
   'http://169.254.169.254/latest/meta-data/' \
   'http://2852039166/latest/meta-data/' \
@@ -180,6 +199,7 @@ for blocked_url in \
     pass "Firecrawl rejects private target: $blocked_url"
   fi
 done
+fi
 
 egress_file=/etc/nftables.d/hermes-egress.nft
 if systemctl is-active --quiet nftables.service \
@@ -201,7 +221,7 @@ cleanup_canary() {
 trap cleanup_canary EXIT
 chmod 0700 "$canary"
 if docker run --rm --network none --cpus 1 --memory 1536m --pids-limit 256 \
-  --user "$(id -u):$(id -g)" --read-only \
+  --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=128m \
   --tmpfs /home/hermes:rw,noexec,nosuid,size=64m \
   -e "HOST_MARKER=$host_marker" \

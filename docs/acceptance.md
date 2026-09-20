@@ -52,7 +52,8 @@ For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
 `wiki` at `/srv/hermes/wiki`. Search for a known canonical page with
 `mcp__qmd__query`, retrieve it with `mcp__qmd__get`, and confirm `/tools list`
 contains no QMD collection-management or write tools. Verify
-`hermes-qmd-index.timer` is active and its most recent service run succeeded.
+`hermes-qmd-index.timer` and `hermes-qmd-embed.timer` are active and their most
+recent service runs succeeded.
 
 ## Browser-enabled profile fixture
 
@@ -114,4 +115,4 @@ the Firecrawl probes exercise the denial path.
 
 Finally run `scripts/backup.sh`, verify its checksum, stage it with
 `scripts/restore.sh`, and compare the restored profiles, Kanban SQLite data,
-repositories, and wiki to their sources before declaring readiness.
+repositories, wiki, and artifacts to their sources before declaring readiness.

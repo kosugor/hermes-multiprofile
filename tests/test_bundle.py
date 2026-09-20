@@ -64,6 +64,14 @@ class BundleTests(unittest.TestCase):
         self.assertIn('--no-alias --no-skills', bootstrap)
         self.assertIn('hermes -p "$profile" skills opt-out', bootstrap)
 
+    def test_bootstrap_installs_reviewed_profile_skills(self):
+        bootstrap = read("scripts/bootstrap-user.sh")
+        self.assertIn("config.yaml SOUL.md SKILLS.md", bootstrap)
+        self.assertIn('cp -a -- "$source/skills" "$destination/skills"', bootstrap)
+        self.assertIn('skills.pre-hermes-deployment.${timestamp}', bootstrap)
+        skill_files = list((ROOT / "profiles").glob("*/skills/*/SKILL.md"))
+        self.assertTrue(skill_files)
+
     def test_bootstrap_does_not_touch_builtin_default_profile(self):
         bootstrap = read("scripts/bootstrap-user.sh")
         self.assertNotIn("default", bootstrap)
@@ -168,7 +176,7 @@ class BundleTests(unittest.TestCase):
             "backend: docker",
             "lifetime_seconds: 600",
             "docker_mount_cwd_to_workspace: true",
-            "docker_run_as_host_user: true",
+            "docker_run_as_host_user: false",
             "docker_forward_env: []",
             "docker_network: false",
             'docker_extra_args: ["--pids-limit", "256"]',
@@ -193,6 +201,8 @@ class BundleTests(unittest.TestCase):
         for name in WORKERS:
             self.assertNotIn("TELEGRAM_", read(f"profiles/{name}/.env.example"), name)
         self.assertIn("AGENT_BROWSER_EXECUTABLE_PATH=", read("profiles/researcher/.env.example"))
+        self.assertIn("AGENT_BROWSER_EXECUTABLE_PATH=", read("profiles/web-scraper/.env.example"))
+        self.assertIn("AGENT_BROWSER_EXECUTABLE_PATH=", read("profiles/web-monitor/.env.example"))
         self.assertIn(
             "AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium",
             read("scripts/bootstrap-user.sh"),
@@ -207,6 +217,7 @@ class BundleTests(unittest.TestCase):
                 self.assertIn("model: nous/welcome", config)
             else:
                 self.assertNotIn("fallback_providers:", config)
+                self.assertNotIn("fallback_model:", config)
 
     def test_compose_ports_limits_and_digest_variables(self):
         compose = read("infra/compose.yaml")
@@ -220,6 +231,11 @@ class BundleTests(unittest.TestCase):
         self.assertIn('NUM_WORKERS_PER_QUEUE: "1"', compose)
         self.assertIn('MAX_CONCURRENT_JOBS: "1"', compose)
         self.assertIn('BROWSER_POOL_SIZE: "1"', compose)
+        self.assertEqual(5, compose.count("profiles: [extraction]"))
+        compose_script = read("scripts/compose.sh")
+        self.assertIn("core-up)", compose_script)
+        self.assertIn("extraction-up)", compose_script)
+        self.assertIn("extraction-stop)", compose_script)
 
     def test_dashboard_and_web_ports_are_loopback_only(self):
         self.assertIn("dashboard --host 127.0.0.1 --port 9119", read("systemd/hermes-dashboard.service.in"))
@@ -234,13 +250,20 @@ class BundleTests(unittest.TestCase):
         bootstrap = read("scripts/bootstrap-user.sh")
         self.assertIn("QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd", service)
         self.assertIn("QMD_FORCE_CPU=1", service)
-        self.assertIn("TimeoutStartSec=65min", service)
-        self.assertIn("CPUQuota=100%", service)
-        self.assertIn("MemoryMax=3G", service)
+        self.assertIn("TimeoutStartSec=15min", service)
+        self.assertIn("CPUQuota=25%", service)
+        self.assertIn("MemoryMax=1G", service)
         self.assertIn("ReadOnlyPaths=/srv/hermes/wiki", service)
         self.assertIn("OnUnitInactiveSec=15min", timer)
+        embed_service = read("systemd/hermes-qmd-embed.service.in")
+        embed_timer = read("systemd/hermes-qmd-embed.timer.in")
+        self.assertIn('qmd embed --timeout 60', embed_service)
+        self.assertIn("CPUQuota=50%", embed_service)
+        self.assertIn("MemoryMax=3G", embed_service)
+        self.assertIn("OnCalendar=*-*-* 02:30:00", embed_timer)
         self.assertIn("%h/.cache/qmd", gateway)
         self.assertIn("hermes-qmd-index.timer", bootstrap)
+        self.assertIn("hermes-qmd-embed.timer", bootstrap)
 
     def test_monitor_installs_paused_with_orchestrator_delivery(self):
         script = read("scripts/install-monitor.sh")
@@ -321,6 +344,8 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--ignore-scripts", browser)
         self.assertIn('"$playwright_bin" install chromium', browser)
         self.assertIn('"$hermes_home/bin/chromium"', browser)
+        self.assertIn("registry.findExecutable", browser)
+        self.assertNotIn('find "$HOME/.cache/ms-playwright"', browser)
         self.assertNotIn("browser-use", browser)
 
         lcm = read("scripts/install-lcm.sh")
@@ -373,6 +398,18 @@ class BundleTests(unittest.TestCase):
         gateway_stop = backup.index("systemctl --user stop hermes-gateway.service")
         self.assertLess(dashboard_stop, gateway_stop)
         self.assertIn("dashboard_was_active", backup)
+        self.assertIn('/srv/hermes/artifacts "$stage/srv/hermes/artifacts"', backup)
+        self.assertIn("required_kib=$((source_kib * 2))", backup)
+        self.assertIn("excluded_rebuildable=hermes-agent,node,qmd-runtime,bin", backup)
+
+    def test_skills_match_the_sandbox_and_tool_policy(self):
+        for skill in (ROOT / "profiles").glob("*/skills/*/SKILL.md"):
+            text = skill.read_text(encoding="utf-8")
+            self.assertNotIn("/vault", text, skill)
+            self.assertNotIn("/monitor/", text, skill)
+            self.assertNotIn("Camofox", text, skill)
+        coder_skills = read("profiles/coder/SKILLS.md")
+        self.assertIn("no web or browser toolset", coder_skills)
 
     def test_gateway_has_fail_closed_preflight(self):
         unit = read("systemd/hermes-gateway.service.in")
@@ -461,8 +498,16 @@ class BundleTests(unittest.TestCase):
     @unittest.skipUnless(BASH, "bash is not installed")
     def test_shell_syntax(self):
         scripts = sorted(str(path) for path in (ROOT / "scripts").glob("*.sh"))
-        result = subprocess.run([BASH, "-n", *scripts], capture_output=True, text=True)
-        self.assertEqual(0, result.returncode, result.stderr)
+        for script in scripts:
+            result = subprocess.run([BASH, "-n", script], capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, f"{script}: {result.stderr}")
+
+    def test_validation_audits_installed_profiles_and_core_web_mode(self):
+        validate = read("scripts/validate.sh")
+        self.assertIn('--profiles-root "$hermes_home/profiles"', validate)
+        self.assertIn("--core-web", validate)
+        self.assertIn("QMD embed timer is active", validate)
+        self.assertNotIn('--user "$(id -u):$(id -g)" --read-only', validate)
 
     def test_no_committed_secret_values(self):
         secret_assignment = re.compile(

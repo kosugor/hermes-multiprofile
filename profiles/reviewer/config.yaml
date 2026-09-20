@@ -31,7 +31,7 @@ terminal:
   lifetime_seconds: 600
   docker_image: hermes-sandbox:2026.09.11
   docker_mount_cwd_to_workspace: true
-  docker_run_as_host_user: true
+  docker_run_as_host_user: false
   docker_forward_env: []
   docker_network: false
   docker_extra_args: ["--pids-limit", "256"]

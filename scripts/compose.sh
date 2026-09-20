@@ -20,7 +20,16 @@ action=${1:-ps}
 shift || true
 case "$action" in
   up)
-    exec docker compose -f "$compose_file" up -d --remove-orphans "$@"
+    exec docker compose -f "$compose_file" --profile extraction up -d --remove-orphans "$@"
+    ;;
+  core-up)
+    exec docker compose -f "$compose_file" up -d "$@"
+    ;;
+  extraction-up)
+    exec docker compose -f "$compose_file" --profile extraction up -d "$@"
+    ;;
+  extraction-stop)
+    exec docker compose -f "$compose_file" --profile extraction stop firecrawl playwright-service rabbitmq nuq-postgres redis "$@"
     ;;
   stop)
     exec docker compose -f "$compose_file" stop "$@"
@@ -32,4 +41,3 @@ case "$action" in
     exec docker compose -f "$compose_file" "$action" "$@"
     ;;
 esac
-

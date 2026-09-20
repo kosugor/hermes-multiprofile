@@ -1,6 +1,6 @@
 ---
 name: deep-web-research
-description: Default evidence-first workflow for deep web research using SearXNG search, Firecrawl extraction, and Camofox only as a fallback.
+description: Default evidence-first workflow for deep web research using SearXNG search, Firecrawl extraction, and the built-in browser only as a fallback.
 version: 1.0.0
 platforms: [linux]
 metadata:
@@ -29,7 +29,7 @@ where multiple sources should be reconciled.
    - original research papers;
    - authoritative public records.
 4. Use `web_extract` through Firecrawl on promising URLs.
-5. Only use Camofox/browser automation when extraction fails or the page requires
+5. Only use the built-in browser when extraction fails or the page requires
    JavaScript, interaction, authentication, or anti-bot handling.
 6. Cross-check material claims with a second independent source when practical.
 7. Track freshness. For changing software, prices, policies, model names, or
@@ -52,9 +52,9 @@ where multiple sources should be reconciled.
 
 ## Browser Escalation
 
-Firecrawl first. Camofox second.
+Firecrawl first. Built-in browser second.
 
-Escalate to Camofox only when one of these is true:
+Escalate to the built-in browser only when one of these is true:
 - extracted content is incomplete or empty;
 - navigation is required to reach the content;
 - JavaScript renders the material;

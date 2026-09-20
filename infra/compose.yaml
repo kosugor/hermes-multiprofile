@@ -63,6 +63,7 @@ services:
   redis:
     image: ${REDIS_IMAGE:?run scripts/lock-images.sh}
     restart: unless-stopped
+    profiles: [extraction]
     command: ["redis-server", "--bind", "0.0.0.0", "--appendonly", "yes", "--loglevel", "warning"]
     networks: [backend]
     volumes:
@@ -80,6 +81,7 @@ services:
   rabbitmq:
     image: ${RABBITMQ_IMAGE:?run scripts/lock-images.sh}
     restart: unless-stopped
+    profiles: [extraction]
     networks: [backend]
     volumes:
       - firecrawl-rabbitmq:/var/lib/rabbitmq
@@ -97,6 +99,7 @@ services:
   nuq-postgres:
     image: ${NUQ_POSTGRES_IMAGE:?run scripts/lock-images.sh}
     restart: unless-stopped
+    profiles: [extraction]
     networks: [backend]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-firecrawl}
@@ -118,6 +121,7 @@ services:
   playwright-service:
     image: ${PLAYWRIGHT_IMAGE:?run scripts/lock-images.sh}
     restart: unless-stopped
+    profiles: [extraction]
     networks: [backend]
     environment:
       PORT: "3000"
@@ -145,6 +149,7 @@ services:
   firecrawl:
     image: ${FIRECRAWL_IMAGE:?run scripts/lock-images.sh}
     restart: unless-stopped
+    profiles: [extraction]
     command: ["node", "dist/src/harness.js", "--start-docker"]
     depends_on:
       redis:
@@ -211,4 +216,3 @@ volumes:
   firecrawl-redis:
   firecrawl-rabbitmq:
   firecrawl-postgres:
-

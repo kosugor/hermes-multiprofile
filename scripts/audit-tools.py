@@ -86,12 +86,18 @@ QMD_SERVER_POLICY = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument(
+        "--profiles-root",
+        type=Path,
+        help="installed profile directory; defaults to the bundle templates",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     bundle = args.bundle.resolve()
+    profiles_root = (args.profiles_root or bundle / "profiles").resolve()
     reviewed = json.loads((bundle / "policy/tool-inventory.json").read_text(encoding="utf-8"))
     reviewed_workers = json.loads(
         (bundle / "policy/kanban-worker-inventory.json").read_text(encoding="utf-8")
@@ -99,7 +105,11 @@ def main() -> int:
     failures: list[str] = []
 
     for profile, expected_names in reviewed.items():
-        config = yaml.safe_load((bundle / "profiles" / profile / "config.yaml").read_text(encoding="utf-8"))
+        config_path = profiles_root / profile / "config.yaml"
+        if not config_path.is_file():
+            failures.append(f"{profile}: missing configuration at {config_path}")
+            continue
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         platform_config = config.get("platform_toolsets") or {}
         disabled = set((config.get("agent") or {}).get("disabled_toolsets") or ())
         browser_config = config.get("browser") or {}

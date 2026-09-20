@@ -42,13 +42,16 @@ fi
 }
 
 # agent-browser's Chrome-for-Testing downloader has no Linux ARM64 build.
-# Playwright publishes native ARM64 Chromium; expose its executable explicitly
-# because agent-browser does not reliably recognize Playwright cache layouts.
+# Ask the pinned Playwright package for its Chromium executable. Searching the
+# shared cache can select an older browser installed by another Playwright release.
 "$playwright_bin" install chromium
-chromium_bin=$(find "$HOME/.cache/ms-playwright" -maxdepth 4 -type f \
-  -perm -u+x \( -name chrome -o -name chromium -o -name chrome-headless-shell \
-    -o -name headless_shell -o -name chromium-browser \) \
-  -print -quit 2>/dev/null)
+playwright_module="$hermes_home/node/lib/node_modules/playwright"
+chromium_bin=$("$managed_bin/node" -e '
+  const { registry } = require(require.resolve("playwright-core/lib/server/registry", {
+    paths: [process.argv[1]],
+  }));
+  process.stdout.write(registry.findExecutable("chromium").executablePath());
+' "$playwright_module" 2>/dev/null || true)
 if [[ -z $chromium_bin ]]; then
   echo "No executable Playwright Chromium build was found after installation." >&2
   exit 1

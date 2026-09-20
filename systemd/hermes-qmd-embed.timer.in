@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the Wiki Maintainer QMD semantic index overnight
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=30min
+Persistent=true
+Unit=hermes-qmd-embed.service
+
+[Install]
+WantedBy=timers.target

@@ -1,5 +1,5 @@
 [Unit]
-Description=Periodically refresh the Wiki Maintainer QMD index
+Description=Periodically refresh the Wiki Maintainer QMD lexical index
 
 [Timer]
 OnBootSec=5min

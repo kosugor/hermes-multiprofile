@@ -14,4 +14,4 @@ Before a rename, list incoming links/embeds, target collision risks and case-onl
 
 After edits, re-read affected notes and verify new targets exist. Report newly broken links, preexisting issues and ambiguous targets separately. Repair only in-scope unambiguous references; propose broader repairs instead of bulk rewriting the vault. For substantial changes retain the before-state described in maintain-obsidian-wiki.
 
-Exclude /vault/.hermes-maintenance from ordinary note indexing; it contains automation checkpoints and reports.
+Exclude /workspace/.hermes-maintenance from ordinary note indexing; it contains automation checkpoints and reports.

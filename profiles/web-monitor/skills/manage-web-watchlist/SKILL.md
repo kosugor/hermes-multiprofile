@@ -5,9 +5,9 @@ description: Maintain a file-based source list and discover selectable documenta
 
 # manage-web-watchlist
 
-Use `/monitor/watchlist.json` as the only watch registry. If it is absent, copy the supplied `watchlist.example.json` from this profile pack only when the user asks to initialize monitoring. Never replace a populated watchlist with the example.
+Use `/workspace/monitoring/watchlist.json` as the only watch registry. If it is absent, copy the supplied `watchlist.example.json` from this profile pack only when the user asks to initialize monitoring. Never replace a populated watchlist with the example.
 
-Before editing, parse the JSON and validate `version`, unique source IDs, supported source types, absolute HTTP(S) URLs, and unique page URLs within each site. Preserve unknown fields. Read the file again immediately before replacement; if it changed, stop and report a conflict. Write through a temporary file followed by an atomic rename, and retain `/monitor/backups/watchlist-<UTC timestamp>.json` before a material edit.
+Before editing, parse the JSON and validate `version`, unique source IDs, supported source types, absolute HTTP(S) URLs, and unique page URLs within each site. Preserve unknown fields. Read the file again immediately before replacement; if it changed, stop and report a conflict. Write through a temporary file followed by an atomic rename, and retain `/workspace/monitoring/backups/watchlist-<UTC timestamp>.json` before a material edit.
 
 For a site tree:
 

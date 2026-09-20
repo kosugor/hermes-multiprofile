@@ -30,8 +30,9 @@ Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
 `/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
 checksum pinned. It runs locally in stdio mode and exposes only query,
 retrieval, and status tools. A low-priority user
-timer refreshes its lexical and vector index every 15 minutes. The rebuildable
-index and approximately 2 GB of on-demand local models remain under
+timer refreshes its lexical index every 15 minutes at low priority. A separate
+overnight timer refreshes embeddings and the semantic index at half a CPU. The
+rebuildable index and approximately 2 GB of on-demand local models remain under
 `~/.cache/qmd` and are intentionally excluded from state backups.
 
 Native Hermes `execute_code` is disabled. File and shell operations use an
@@ -76,10 +77,11 @@ bash ./scripts/bootstrap-user.sh
 The bootstrap is idempotent. It installs the exact Hermes release into the
 supported `~/.hermes/hermes-agent` layout, creates `/srv/hermes/projects`,
 `/srv/hermes/wiki`, and `/srv/hermes/artifacts`; creates the seven named Hermes
-profiles; backs up an existing profile config before replacing it; builds the
+profiles; backs up an existing profile configuration and skill pack before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
-installs user systemd units. Bundled skills are opted out for every profile so
-the positive tool policies remain the only capability surface. Bootstrap does
+installs user systemd units. Bundled skills are opted out for every profile,
+while reviewed profile-local skills are installed with their matching profiles.
+Bootstrap does
 not invent or overwrite secrets. It also installs the exact reviewed LCM
 release into `~/.hermes/profiles/coder/plugins/hermes-lcm`; an existing checkout
 must already be clean and at the approved commit. The lockfile-pinned QMD
@@ -127,6 +129,7 @@ sudo bash ./scripts/install-egress-guard.sh --user hermes
 sudo bash ./scripts/install-egress-guard.sh --user hermes --apply
 systemctl --user enable --now hermes-web.service
 systemctl --user enable --now hermes-qmd-index.timer
+systemctl --user enable --now hermes-qmd-embed.timer
 systemctl --user enable --now hermes-gateway.service
 systemctl --user enable --now hermes-dashboard.service
 ./scripts/validate.sh
@@ -205,9 +208,24 @@ hermes -p orchestrator kanban inspect
 journalctl --user -u hermes-gateway -f
 ```
 
+The web service starts both SearXNG and the extraction stack. During extended
+coding, stop extraction without interrupting search or the gateway:
+
+```bash
+./scripts/compose.sh extraction-stop
+./scripts/validate.sh --core-web
+```
+
+Restore extraction before research or monitoring work with
+`./scripts/compose.sh extraction-up`. The next restart of `hermes-web.service`
+also restores the full stack.
+
 `scripts/backup.sh` briefly stops the dashboard and gateway for a consistent
-archive. Restore archives are extracted only into a new empty staging directory by
-`scripts/restore.sh`; an in-place swap remains a deliberate operator action.
+archive. It includes projects, wiki, artifacts, profile state, and runtime
+secrets, while excluding reproducible Hermes, Node, QMD, and browser runtimes.
+It checks free space before staging. Restore archives are extracted only into a
+new empty staging directory by `scripts/restore.sh`; run bootstrap first to
+recreate those runtimes, then deliberately restore approved state paths.
 
 When a worker reports a missing dependency, update the reviewed inputs under
 `images/hermes-sandbox/dependencies/` and run

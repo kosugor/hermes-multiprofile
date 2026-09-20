@@ -53,5 +53,7 @@ Restore staged at: $target
 
 Nothing was installed in place. Review MANIFEST.txt and the staged files, stop
 Hermes, then deliberately copy the approved paths into their final locations.
-Keep the original backup until validation and service startup both succeed.
+Run bootstrap first to recreate the managed Hermes, Node, QMD, and browser
+runtimes; then restore the approved state paths. Keep the original backup until
+validation and service startup both succeed.
 EOF

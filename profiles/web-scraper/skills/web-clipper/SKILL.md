@@ -43,8 +43,8 @@ A URL supplied by the user or orchestrator.
    ---
 
 7. Choose a filesystem-safe filename based on the title.
-8. Save to `/vault/Inbox/Web Clips/<filename>.md` unless the task specifies a
-   different vault-relative destination.
+8. Save to `/workspace/Inbox/Web Clips/<filename>.md` unless the task specifies
+   a different workspace-relative destination.
 9. Return the created file path plus a one-sentence description.
 
 ## Search Rule

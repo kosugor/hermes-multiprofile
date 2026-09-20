@@ -76,20 +76,27 @@ timestamp=$(date -u +%Y%m%dT%H%M%SZ)
 
 install_profile_files() {
   local name=$1
-  local destination="$hermes_home/profiles/$name"
+  local destination="$hermes_home/profiles/$name" source="$repo_root/profiles/$name"
   mkdir -p "$destination"
-  for filename in config.yaml SOUL.md; do
-    if [[ -f "$destination/$filename" ]] && ! cmp -s "$repo_root/profiles/$name/$filename" "$destination/$filename"; then
+  for filename in config.yaml SOUL.md SKILLS.md; do
+    [[ -f "$source/$filename" ]] || continue
+    if [[ -f "$destination/$filename" ]] && ! cmp -s "$source/$filename" "$destination/$filename"; then
       cp -p -- "$destination/$filename" "$destination/${filename}.pre-hermes-deployment.${timestamp}"
     fi
-    install -m 0644 "$repo_root/profiles/$name/$filename" "$destination/$filename"
+    install -m 0644 "$source/$filename" "$destination/$filename"
   done
+  if [[ -d "$source/skills" ]]; then
+    if [[ -d "$destination/skills" ]]; then
+      mv -- "$destination/skills" "$destination/skills.pre-hermes-deployment.${timestamp}"
+    fi
+    cp -a -- "$source/skills" "$destination/skills"
+  fi
   if [[ ! -e "$destination/.env" ]]; then
     install -m 0600 "$repo_root/profiles/$name/.env.example" "$destination/.env"
   else
     chmod 0600 "$destination/.env"
   fi
-  if [[ $name == researcher ]]; then
+  if [[ $name == researcher || $name == web-scraper || $name == web-monitor ]]; then
     if grep -q '^AGENT_BROWSER_EXECUTABLE_PATH=' "$destination/.env"; then
       sed -i "s|^AGENT_BROWSER_EXECUTABLE_PATH=.*|AGENT_BROWSER_EXECUTABLE_PATH=$hermes_home/bin/chromium|" \
         "$destination/.env"
@@ -160,7 +167,9 @@ for unit in \
   hermes-gateway.service \
   hermes-dashboard.service \
   hermes-qmd-index.service \
-  hermes-qmd-index.timer; do
+  hermes-qmd-index.timer \
+  hermes-qmd-embed.service \
+  hermes-qmd-embed.timer; do
   sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" -e "s/@HERMES_BIN@/${escaped_hermes}/g" \
     "$repo_root/systemd/${unit}.in" > "$unit_dir/$unit"
 done
@@ -177,6 +186,6 @@ Next:
   1. Fill ~/.hermes/profiles/orchestrator/.env with TELEGRAM_BOT_TOKEN and set both Telegram ID fields to your numeric user ID.
   2. Add OPENROUTER_API_KEY only to fallback-enabled profile .env files.
   3. Run: hermes auth add openai-codex
-  4. Enable hermes-web, hermes-gateway, hermes-dashboard, and the QMD index timer.
+  4. Enable hermes-web, hermes-gateway, hermes-dashboard, the QMD index timer, and the QMD embed timer.
   5. Run: $repo_root/scripts/validate.sh
 EOF
