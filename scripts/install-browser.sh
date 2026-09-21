@@ -46,12 +46,13 @@ fi
 # shared cache can select an older browser installed by another Playwright release.
 "$playwright_bin" install chromium
 playwright_module="$hermes_home/node/lib/node_modules/playwright"
-chromium_bin=$("$managed_bin/node" -e '
-  const { registry } = require(require.resolve("playwright-core/lib/server/registry", {
-    paths: [process.argv[1]],
-  }));
-  process.stdout.write(registry.findExecutable("chromium").executablePath());
-' "$playwright_module" 2>/dev/null || true)
+if ! chromium_bin=$("$managed_bin/node" -e '
+  const { chromium } = require(process.argv[1]);
+  process.stdout.write(chromium.executablePath());
+' "$playwright_module"); then
+  echo "Could not query the Playwright Chromium executable path." >&2
+  exit 1
+fi
 if [[ -z $chromium_bin ]]; then
   echo "No executable Playwright Chromium build was found after installation." >&2
   exit 1

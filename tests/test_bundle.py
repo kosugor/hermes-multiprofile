@@ -406,7 +406,9 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--ignore-scripts", browser)
         self.assertIn('"$playwright_bin" install chromium', browser)
         self.assertIn('"$hermes_home/bin/chromium"', browser)
-        self.assertIn("registry.findExecutable", browser)
+        self.assertIn("chromium.executablePath()", browser)
+        self.assertNotIn("playwright-core/lib/server/registry", browser)
+        self.assertNotIn('"$playwright_module" 2>/dev/null || true', browser)
         self.assertNotIn('find "$HOME/.cache/ms-playwright"', browser)
         self.assertNotIn("browser-use", browser)
 
