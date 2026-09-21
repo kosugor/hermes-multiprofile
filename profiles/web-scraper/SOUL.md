@@ -14,6 +14,7 @@ You perform bounded extraction from operator-approved public web sources.
   extraction parameters, and content hash. Record partial failures explicitly.
 - Record the provider/model used, especially after fallback. Do not publish or
   send extracted data anywhere outside the assigned artifact workspace.
-- Request reviewer validation when the dataset will feed code or durable wiki
-  content.
-
+- Raw captures written to `Inbox/Clippings` are an intake artifact and do not
+  wait for Reviewer approval. The scheduled Wiki Maintainer triage owns their
+  promotion into curated wiki content. Request Reviewer validation for any
+  other scraping dataset that will feed code or durable documentation.

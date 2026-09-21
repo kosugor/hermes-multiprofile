@@ -277,6 +277,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("MemoryMax=3G", embed_service)
         self.assertIn("OnCalendar=*-*-* 02:30:00", embed_timer)
         self.assertIn("%h/.cache/qmd", gateway)
+        self.assertIn("Environment=TZ=Europe/Belgrade", gateway)
         self.assertIn("hermes-qmd-index.timer", bootstrap)
         self.assertIn("hermes-qmd-embed.timer", bootstrap)
 
@@ -287,6 +288,49 @@ class BundleTests(unittest.TestCase):
         self.assertNotIn(" cron resume ", script)
         self.assertIn("MONITOR_SCHEMA", script)
         self.assertIn("Set MONITOR_SELECTOR, MONITOR_SCHEMA, or both.", script)
+
+    def test_wiki_triage_installer_is_paused_and_scoped(self):
+        script = read("scripts/install-wiki-triage.sh")
+        self.assertIn("every 1d at 03:30", script)
+        self.assertIn("wiki-clipping-triage", script)
+        self.assertIn("--skill scheduled-wiki-maintenance", script)
+        self.assertIn("--workdir \"$wiki_root\"", script)
+        self.assertIn("--deliver bot-chat:orchestrator", script)
+        self.assertIn("--provider openai-codex", script)
+        self.assertIn("--model gpt-5.6-terra", script)
+        self.assertIn("--paused", script)
+        self.assertIn("investments", script)
+        self.assertIn("software-development", script)
+        self.assertIn("WIKI_TRIAGE_TIMEZONE", script)
+
+    def test_clipping_contract_and_triage_paths(self):
+        clipper = read("profiles/web-scraper/skills/web-clipper/SKILL.md")
+        self.assertIn("clip <absolute HTTP(S) URL>", clipper)
+        self.assertIn("/workspace/Inbox/Clippings/", clipper)
+        for field in ("retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
+            self.assertIn(field, clipper)
+        triage = read("profiles/wiki-maintainer/skills/scheduled-wiki-maintenance/SKILL.md")
+        self.assertIn("Process at most 20 files", triage)
+        self.assertIn("investments", triage)
+        self.assertIn("devops", triage)
+        self.assertIn("software-development", triage)
+        self.assertIn("Inbox/Clippings", triage)
+        self.assertIn("Refuse the run when the Git index already contains staged changes", triage)
+        self.assertIn("[SILENT]", triage)
+
+    def test_capture_validator_requires_provenance_hash_contract(self):
+        validator = read("profiles/web-scraper/skills/web-clipper/scripts/validate-capture.py")
+        for field in ("retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
+            self.assertIn(field, validator)
+        self.assertIn("does not match the Markdown body", validator)
+
+    def test_archive_audits_support_topic_wikis_and_inbox(self):
+        audit = read("profiles/wiki-maintainer/skills/audit-vault-links/scripts/wiki-audit.py")
+        for wiki in ("investments", "devops", "software-development", "ai"):
+            self.assertIn(f'"{wiki}"', audit)
+        self.assertIn("body_of", audit)
+        validator = read("profiles/wiki-maintainer/skills/audit-vault-links/scripts/validate-vault.py")
+        self.assertIn('"inbox/clippings/"', validator)
 
     def test_board_sync_uses_pinned_cli_and_accepts_list_json(self):
         script = read("scripts/sync-boards.sh")
@@ -317,6 +361,7 @@ class BundleTests(unittest.TestCase):
             "compose.sh",
             "install-egress-guard.sh",
             "install-monitor.sh",
+            "install-wiki-triage.sh",
             "backup.sh",
             "restore.sh",
             "upgrade.sh",

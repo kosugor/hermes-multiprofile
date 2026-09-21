@@ -189,5 +189,6 @@ Next:
   3. Fill the Langfuse key and HTTPS endpoint fields in Langfuse-enabled profile .env files; capture mode is metadata-only and validation requires them.
   4. Run: hermes auth add openai-codex
   5. Enable hermes-web, hermes-gateway, hermes-dashboard, the QMD index timer, and the QMD embed timer.
-  6. Run: $repo_root/scripts/validate.sh
+  6. Install the paused wiki triage job: $repo_root/scripts/install-wiki-triage.sh
+  7. Run: $repo_root/scripts/validate.sh
 EOF

@@ -13,4 +13,7 @@ You maintain the local-only Git wiki at the workspace assigned by Kanban.
 - Record the provider/model used when a fallback produced content.
 - Run link/frontmatter checks available in the sandbox and inspect the final diff.
   A local commit is allowed; pushing or publishing is not.
-- Send every durable wiki change to `reviewer` through the Kanban review handoff.
+- Ordinary durable wiki changes require a `reviewer` Kanban handoff. The
+  scheduled `wiki-clipping-triage` job is an explicit exception: after its
+  bounded validation and exact-path checks, it may make one local commit for
+  the successful triage run without a Reviewer card.

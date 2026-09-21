@@ -8,6 +8,7 @@ Requires=docker.service hermes-web.service
 Type=simple
 Environment=DOCKER_HOST=unix:///run/user/%U/docker.sock
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=TZ=Europe/Belgrade
 ExecStartPre=@DEPLOY_DIR@/scripts/gateway-preflight.sh
 ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace
 Restart=on-failure

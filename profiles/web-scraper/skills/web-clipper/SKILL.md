@@ -14,7 +14,9 @@ metadata:
 
 ## Input
 
-A URL supplied by the user or orchestrator.
+A URL supplied by the user or orchestrator. The Telegram-facing command is
+`clip <absolute HTTP(S) URL>`; do not treat an ordinary URL in an unrelated
+message as a clipping request.
 
 ## Procedure
 
@@ -34,17 +36,29 @@ A URL supplied by the user or orchestrator.
    - preserve code blocks, tables, lists, quotations, and useful links;
    - remove menus, related-post grids, ads, cookie notices, repetitive footers;
    - avoid rewriting the author's wording except for formatting cleanup.
-6. Add provenance frontmatter:
+6. Add provenance frontmatter. Quote values when needed so the frontmatter
+   remains valid YAML:
 
    ---
    title: "<page title>"
    source: "<canonical URL>"
    clipped: "<YYYY-MM-DD>"
+   retrieved_at: "<UTC ISO-8601 timestamp ending in Z>"
+   capture_status: "complete|partial"
+   capture_method: "firecrawl|browser|firecrawl+browser"
+   provider: "<provider used for this run>"
+   model: "<model used for this run>"
+   content_sha256: "<SHA-256 of the exact Markdown body after frontmatter>"
    ---
 
-7. Choose a filesystem-safe filename based on the title.
-8. Save to `/workspace/Inbox/Web Clips/<filename>.md` unless the task specifies
-   a different workspace-relative destination.
+7. Choose a filesystem-safe filename in the form
+   `<UTC timestamp with microseconds>-<title-slug>-<first-8-hash-chars>.md`
+   (for example, `20260921T033000123456Z-title-a1b2c3d4.md`). If a collision
+   still occurs, append a numeric suffix rather than overwriting. This
+   preserves a dated snapshot when the same URL is clipped more than once.
+8. Save to `/workspace/Inbox/Clippings/<filename>.md` unless the task
+   specifies a different workspace-relative destination. Create the directory
+   if it does not exist.
 9. Run `scripts/validate-capture.py` on the saved Markdown and return the
    created file path plus a one-sentence description.
 
@@ -64,6 +78,10 @@ Only condense if the user explicitly asks for a summary.
 Re-read the saved Markdown and confirm:
 - frontmatter is valid;
 - source URL is present;
+- retrieval timestamp, capture metadata, provider/model, and body hash are
+  present and the body hash matches;
+- `capture_status: partial` is explicitly reported and is not presented as a
+  complete source;
 - no obvious site chrome remains;
 - no section was accidentally duplicated;
 - code fences and Markdown structure are balanced;

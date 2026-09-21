@@ -89,7 +89,10 @@ def validate(root: Path) -> list[Problem]:
     problems: list[Problem] = []
     for source in notes:
         relative_source = source.relative_to(root).as_posix()
-        if "/raw/" in f"/{relative_source}" or relative_source.startswith("Clippings/"):
+        normalized_source = relative_source.casefold()
+        if "/raw/" in f"/{normalized_source}" or normalized_source.startswith(
+            ("clippings/", "inbox/clippings/")
+        ):
             continue
         text = strip_fenced_code(source.read_text(encoding="utf-8", errors="replace"))
         for match in WIKILINK_RE.finditer(text):

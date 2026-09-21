@@ -213,6 +213,36 @@ The monitor records snapshots below `/srv/hermes/wiki/monitoring/`, suppresses
 unchanged results with `[SILENT]`, and sends changes to `bot-chat:orchestrator` for
 orchestrator triage.
 
+## URL clipping and wiki triage
+
+Send an explicit command to the Telegram operator bot:
+
+```text
+clip https://example.com/article
+```
+
+The Orchestrator routes that one-time capture to Web Scraper. Complete Markdown
+snapshots land in `/srv/hermes/wiki/Inbox/Clippings`; repeated captures keep
+dated snapshots with provenance and body hashes. Ordinary URLs in other
+messages are not clipped automatically.
+
+Install the daily Wiki Maintainer triage job. It is created paused so the first
+run can be inspected before unattended local commits are enabled:
+
+```bash
+./scripts/install-wiki-triage.sh
+hermes -p wiki-maintainer cron run wiki-clipping-triage
+hermes -p wiki-maintainer cron resume wiki-clipping-triage
+```
+
+The job runs daily at 03:30 Europe/Belgrade, processes at most 20 inbox
+clippings, archives each source under one of
+`investments/raw/clippings`, `devops/raw/clippings`,
+`software-development/raw/clippings`, or `ai/raw/clippings`, and updates or
+creates curated pages with source links. It commits only successful paths from
+that run; partial captures, conflicts, and unrelated working-tree changes stay
+untouched. Empty successful runs return `[SILENT]`.
+
 ## Operations
 
 ```bash

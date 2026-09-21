@@ -18,6 +18,7 @@ OFFICIAL_HOSTS = {
     "docs.anthropic.com", "qwen.ai", "qwencloud.com", "huggingface.co",
 }
 SOCIAL_HOSTS = {"x.com", "twitter.com", "reddit.com"}
+TOPIC_WIKIS = ("investments", "devops", "software-development", "ai")
 
 
 def frontmatter_value(text: str, key: str) -> str:
@@ -43,9 +44,27 @@ def is_social(url: str) -> bool:
     return host_of(url) in SOCIAL_HOSTS
 
 
+def topic_roots(root: Path) -> list[Path]:
+    direct = root / "raw" / "clippings"
+    if direct.is_dir():
+        return [root]
+    return [root / name for name in TOPIC_WIKIS if (root / name).is_dir()]
+
+
 def clipping_files(root: Path) -> list[Path]:
-    raw = root / "raw" / "clippings"
-    return sorted(p for p in raw.glob("*.md") if p.is_file())
+    paths: list[Path] = []
+    for topic_root in topic_roots(root):
+        raw = topic_root / "raw" / "clippings"
+        paths.extend(p for p in raw.glob("*.md") if p.is_file())
+    return sorted(paths)
+
+
+def body_of(text: str) -> str:
+    if text.startswith("---\n"):
+        end = text.find("\n---\n", 4)
+        if end >= 0:
+            return text[end + 5 :]
+    return text
 
 
 def duplicate_report(root: Path) -> dict[str, object]:
@@ -56,7 +75,7 @@ def duplicate_report(root: Path) -> dict[str, object]:
         relative = path.relative_to(root).as_posix()
         text = path.read_text(encoding="utf-8", errors="replace")
         source = frontmatter_value(text, "source")
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        digest = hashlib.sha256(body_of(text).encode("utf-8")).hexdigest()
         rows.append({"path": relative, "source": source, "sha256": digest})
         if source:
             by_url[source].append(relative)
@@ -71,8 +90,9 @@ def duplicate_report(root: Path) -> dict[str, object]:
 def clipping_report(root: Path) -> dict[str, object]:
     curated_text = "\n".join(
         p.read_text(encoding="utf-8", errors="replace")
+        for topic_root in topic_roots(root)
         for directory in CURATED_DIRS
-        for p in (root / directory).glob("*.md")
+        for p in (topic_root / directory).glob("*.md")
         if p.is_file()
     )
     rows = []
