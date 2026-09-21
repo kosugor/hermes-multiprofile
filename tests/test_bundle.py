@@ -437,11 +437,22 @@ class BundleTests(unittest.TestCase):
             "web-monitor": {"manage-web-watchlist", "run-web-monitor"},
         }
         for name, expected in expected_skills.items():
+            skill_root = ROOT / "profiles" / name / "skills"
             actual = {
-                path.name for path in (ROOT / "profiles" / name / "skills").iterdir()
+                path.name for path in skill_root.iterdir()
                 if path.is_dir() and (path / "SKILL.md").is_file()
-            } if (ROOT / "profiles" / name / "skills").is_dir() else set()
+            } if skill_root.is_dir() else set()
             self.assertEqual(expected, actual, name)
+            all_skill_paths = {
+                path.relative_to(skill_root).as_posix()
+                for path in skill_root.rglob("SKILL.md")
+            } if skill_root.is_dir() else set()
+            self.assertEqual({f"{skill}/SKILL.md" for skill in expected}, all_skill_paths, name)
+            self.assertFalse((ROOT / "profiles" / name / "skill-bundles").exists(), name)
+
+        self.assertTrue((ROOT / "profiles" / "web-scraper" / "skills" / "web-clipper" / "scripts" / "validate-capture.py").is_file())
+        self.assertTrue((ROOT / "profiles" / "wiki-maintainer" / "skills" / "audit-vault-links" / "scripts" / "validate-vault.py").is_file())
+        self.assertTrue((ROOT / "profiles" / "wiki-maintainer" / "skills" / "audit-vault-links" / "scripts" / "wiki-audit.py").is_file())
 
     def test_gateway_has_fail_closed_preflight(self):
         unit = read("systemd/hermes-gateway.service.in")

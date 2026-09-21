@@ -45,7 +45,8 @@ A URL supplied by the user or orchestrator.
 7. Choose a filesystem-safe filename based on the title.
 8. Save to `/workspace/Inbox/Web Clips/<filename>.md` unless the task specifies
    a different workspace-relative destination.
-9. Return the created file path plus a one-sentence description.
+9. Run `scripts/validate-capture.py` on the saved Markdown and return the
+   created file path plus a one-sentence description.
 
 ## Search Rule
 
@@ -65,4 +66,5 @@ Re-read the saved Markdown and confirm:
 - source URL is present;
 - no obvious site chrome remains;
 - no section was accidentally duplicated;
-- code fences and Markdown structure are balanced.
+- code fences and Markdown structure are balanced;
+- `scripts/validate-capture.py` reports success.
