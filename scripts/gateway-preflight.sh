@@ -53,7 +53,7 @@ done
 "$repo_root/scripts/verify-qmd-pin.sh"
 "$repo_root/scripts/verify-langfuse-pin.sh"
 
-for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
+for profile in orchestrator researcher coder reviewer web-monitor; do
   profile_env="$hermes_home/profiles/$profile/.env"
   [[ -f $profile_env ]] || { echo "Missing profile environment: $profile_env" >&2; exit 1; }
   profile_value() {

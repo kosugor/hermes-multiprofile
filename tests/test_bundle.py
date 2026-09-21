@@ -100,16 +100,20 @@ class BundleTests(unittest.TestCase):
                 self.assertNotIn("hermes-lcm", config, name)
                 self.assertIn("context:\n  engine: compressor", config, name)
 
-    def test_langfuse_is_enabled_with_metadata_capture_for_every_profile(self):
+    def test_langfuse_profile_activation_and_metadata_capture(self):
         for name in PROFILE_NAMES:
             config = read(f"profiles/{name}/config.yaml")
-            self.assertIn("observability/langfuse", config, name)
             env = read(f"profiles/{name}/.env.example")
-            self.assertIn("HERMES_LANGFUSE_PUBLIC_KEY=", env, name)
-            self.assertIn("HERMES_LANGFUSE_SECRET_KEY=", env, name)
-            self.assertIn("HERMES_LANGFUSE_CAPTURE=metadata", env, name)
-            self.assertIn("HERMES_LANGFUSE_RELEASE=v2026.9.11", env, name)
-            self.assertIn(f"HERMES_LANGFUSE_ENV=production-{name}", env, name)
+            if name in {"wiki-maintainer", "web-scraper"}:
+                self.assertNotIn("observability/langfuse", config, name)
+                self.assertNotIn("HERMES_LANGFUSE_", env, name)
+            else:
+                self.assertIn("observability/langfuse", config, name)
+                self.assertIn("HERMES_LANGFUSE_PUBLIC_KEY=", env, name)
+                self.assertIn("HERMES_LANGFUSE_SECRET_KEY=", env, name)
+                self.assertIn("HERMES_LANGFUSE_CAPTURE=metadata", env, name)
+                self.assertIn("HERMES_LANGFUSE_RELEASE=v2026.9.11", env, name)
+                self.assertIn(f"HERMES_LANGFUSE_ENV=production-{name}", env, name)
 
     def test_qmd_is_read_only_and_limited_to_wiki_maintainer(self):
         wiki = read("profiles/wiki-maintainer/config.yaml")

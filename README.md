@@ -29,9 +29,10 @@ by the normal Hermes state backup.
 Memory is deliberately role-scoped: Orchestrator, Researcher, Coder, and Wiki
 Maintainer use profile-local built-in memory; Reviewer, Web Scraper, and Web
 Monitor keep memory disabled for independence or deterministic file-backed
-state. No cloud or shared memory provider is configured. All profiles enable
-the bundled Langfuse observability plugin in metadata-only capture mode, with
-per-profile environment labels; it adds no model-callable tools.
+state. No cloud or shared memory provider is configured. Langfuse-enabled
+profiles use the bundled observability plugin in metadata-only capture mode,
+with per-profile environment labels; it adds no model-callable tools. Wiki
+Maintainer and Web Scraper (web-clipper) intentionally have Langfuse disabled.
 
 Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
 `/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
@@ -124,7 +125,7 @@ fields to the same number; the second field makes access DM-only even for the
 operator. The gateway service refuses to start with an empty or broad
 allowlist. Put `OPENROUTER_API_KEY` only in the four fallback-enabled profiles.
 
-Every profile also requires operator-supplied Langfuse credentials in its `.env`:
+Each Langfuse-enabled profile requires operator-supplied credentials in its `.env`:
 `HERMES_LANGFUSE_PUBLIC_KEY` (`pk-lf-...`), `HERMES_LANGFUSE_SECRET_KEY`
 (`sk-lf-...`), and an HTTPS `HERMES_LANGFUSE_BASE_URL`. Keep
 `HERMES_LANGFUSE_CAPTURE=metadata`; the validator rejects missing credentials,

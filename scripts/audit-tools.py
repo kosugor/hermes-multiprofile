@@ -71,9 +71,13 @@ EXPECTED_CONTEXT_ENGINE = {
     "web-monitor": "compressor",
 }
 EXPECTED_PLUGINS = {
-    profile: ({"hermes-lcm", "observability/langfuse"} if profile == "coder"
-              else {"observability/langfuse"})
-    for profile in EXPECTED_CONTEXT_ENGINE
+    "orchestrator": {"observability/langfuse"},
+    "researcher": {"observability/langfuse"},
+    "coder": {"hermes-lcm", "observability/langfuse"},
+    "reviewer": {"observability/langfuse"},
+    "wiki-maintainer": set(),
+    "web-scraper": set(),
+    "web-monitor": {"observability/langfuse"},
 }
 MEMORY_PROFILES = {"orchestrator", "researcher", "coder", "wiki-maintainer"}
 REQUIRED_DISABLED_TOOLSETS = {

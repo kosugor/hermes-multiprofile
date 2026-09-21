@@ -111,7 +111,7 @@ dotenv_value() {
   sed -n "s/^${key}=//p" "$env_file" | tail -n 1 | tr -d '\r'
 }
 
-for profile in orchestrator researcher coder reviewer wiki-maintainer web-scraper web-monitor; do
+for profile in orchestrator researcher coder reviewer web-monitor; do
   profile_env="$hermes_home/profiles/$profile/.env"
   langfuse_public=$(dotenv_value "$profile_env" HERMES_LANGFUSE_PUBLIC_KEY 2>/dev/null || true)
   langfuse_secret=$(dotenv_value "$profile_env" HERMES_LANGFUSE_SECRET_KEY 2>/dev/null || true)

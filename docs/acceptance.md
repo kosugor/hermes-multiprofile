@@ -62,9 +62,11 @@ The audit also enforces the profile capability policy:
   tool; Web Monitor's host cron job is operator-managed.
 - Coder must select `context.engine: lcm`; every other profile must explicitly
   select the built-in `compressor` engine.
-- `observability/langfuse` is enabled for every profile but contributes no
-  callable tools. Deployment validation requires the pinned SDK, HTTPS endpoint,
-  profile-scoped environment label, and `HERMES_LANGFUSE_CAPTURE=metadata`.
+- `observability/langfuse` is enabled for Orchestrator, Researcher, Coder,
+  Reviewer, and Web Monitor but contributes no callable tools. It is disabled
+  for Wiki Maintainer and Web Scraper. Deployment validation requires the pinned
+  SDK, HTTPS endpoint, profile-scoped environment label, and
+  `HERMES_LANGFUSE_CAPTURE=metadata` for enabled profiles.
 
 For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
 `wiki` at `/srv/hermes/wiki`. Search for a known canonical page with
