@@ -72,8 +72,18 @@ locked_integrity=$(
 # Build the lexical index immediately and generate embeddings for changed
 # documents. QMD keeps its rebuildable index and models below ~/.cache/qmd;
 # only the reviewed collection configuration lives in the profile backup.
+
 "$qmd_bin" pull
+
+# QMD materializes model defaults and reformats index.yml during pull.
+# Restore the reviewed configuration before performing the exact comparison.
+install -m 0644 \
+  "$repo_root/qmd/wiki-index.yml" \
+  "$qmd_config_dir/index.yml"
+
 "$repo_root/scripts/verify-qmd-pin.sh"
+
+
 "$qmd_bin" update
 "$qmd_bin" embed --timeout 60
 

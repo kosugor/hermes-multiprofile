@@ -34,7 +34,7 @@ srv_free_kib=$(df -Pk /srv/hermes | awk 'NR==2 {print $4}')
 command -v docker >/dev/null 2>&1 || { echo "docker is required" >&2; exit 1; }
 command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
 "$repo_root/scripts/install-hermes.sh"
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.hermes/bin:$HOME/.local/bin:$PATH"
 command -v hermes >/dev/null 2>&1 || { echo "Hermes installation did not create ~/.local/bin/hermes." >&2; exit 1; }
 "$repo_root/scripts/verify-hermes-pin.sh"
 
