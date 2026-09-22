@@ -209,9 +209,11 @@ for blocked_url in \
   'https://httpbin.org/redirect-to?url=http%3A%2F%2F169.254.169.254%2Flatest%2Fmeta-data%2F' \
   'http://127.0.0.1:8888/' \
   'http://10.0.0.1/'; do
+  request_body=$(jq -cn --arg url "$blocked_url" \
+    '{url: $url, formats: ["markdown"], maxAge: 0}')
   response=$(curl --silent --show-error --max-time 20 \
     -H 'Authorization: Bearer self-hosted' -H 'Content-Type: application/json' \
-    --data "{\"url\":\"$blocked_url\",\"formats\":[\"markdown\"]}" \
+    --data "$request_body" \
     'http://127.0.0.1:3002/v1/scrape' 2>/dev/null || true)
   if [[ -z $response ]] || ! jq -e 'type == "object" and has("success")' <<<"$response" >/dev/null 2>&1; then
     fail "Firecrawl returns an explicit denial for private target: $blocked_url"
