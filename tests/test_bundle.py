@@ -297,7 +297,8 @@ class BundleTests(unittest.TestCase):
 
     def test_wiki_triage_installer_is_paused_and_scoped(self):
         script = read("scripts/install-wiki-triage.sh")
-        self.assertIn("every 1d at 03:30", script)
+        self.assertIn("every day at 03:30", script)
+        self.assertNotIn("every 1d at 03:30", script)
         self.assertIn("wiki-clipping-triage", script)
         self.assertIn("--skill scheduled-wiki-maintenance", script)
         self.assertIn("--workdir \"$wiki_root\"", script)
@@ -310,6 +311,10 @@ class BundleTests(unittest.TestCase):
         self.assertIn("WIKI_TRIAGE_TIMEZONE", script)
 
     def test_clipping_contract_and_triage_paths(self):
+        orchestrator = read("profiles/orchestrator/SOUL.md")
+        self.assertIn("workspace_kind=dir", orchestrator)
+        self.assertIn("workspace_path=/srv/hermes/wiki", orchestrator)
+        self.assertIn("pinned Hermes release", orchestrator)
         clipper = read("profiles/web-scraper/skills/web-clipper/SKILL.md")
         self.assertIn("clip <absolute HTTP(S) URL>", clipper)
         self.assertIn("/workspace/Inbox/Clippings/", clipper)

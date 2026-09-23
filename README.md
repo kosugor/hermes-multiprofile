@@ -234,7 +234,15 @@ previous tool schema.
 The Orchestrator routes that one-time capture to Web Scraper. Complete Markdown
 snapshots land in `/srv/hermes/wiki/Inbox/Clippings`; repeated captures keep
 dated snapshots with provenance and body hashes. Ordinary URLs in other
-messages are not clipped automatically.
+messages are not clipped automatically. The card explicitly uses the `dir`
+workspace kind at `/srv/hermes/wiki`; on the pinned Hermes release, merely
+placing the card on a board with that default workdir still creates a scratch
+workspace.
+
+If an older Orchestrator prompt already created a blocked scratch card, archive
+that card and retry after redeploying the profile, restarting the gateway, and
+sending `/new`. Workspace kind and path cannot be repaired with `kanban edit`
+on the pinned release.
 
 Install the daily Wiki Maintainer triage job. It is created paused so the first
 run can be inspected before unattended local commits are enabled:

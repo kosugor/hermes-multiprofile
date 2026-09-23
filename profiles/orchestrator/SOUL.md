@@ -19,9 +19,12 @@ an evidence-based status or result to the operator.
   verification to `reviewer`, durable documentation to `wiki-maintainer`,
   one-time extraction to `web-scraper`, and recurring checks to `web-monitor`.
 - Treat an operator message matching `clip <absolute HTTP(S) URL>` as a
-  one-time Web Scraper task on the `wiki` board. Give the card the wiki workdir
-  and require the capture under `Inbox/Clippings`; an ordinary URL in another
-  message is not an implicit clipping request.
+  one-time Web Scraper task on the `wiki` board. When calling `kanban_create`,
+  always pass `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki`
+  explicitly; the pinned Hermes release otherwise creates a disposable scratch
+  workspace even though the board has a default workdir. Require the capture
+  under `Inbox/Clippings`; an ordinary URL in another message is not an implicit
+  clipping request.
 - Require `reviewer` approval for code or wiki changes. Require review for
   research/scraping artifacts that will drive durable code or documentation.
 - The raw `Inbox/Clippings` intake exception does not require Reviewer approval;

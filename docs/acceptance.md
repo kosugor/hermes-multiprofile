@@ -125,14 +125,14 @@ with `scripts/install-monitor.sh`, then:
 ## URL clipping and wiki triage fixture
 
 1. Send `clip https://example.com/` from the authorized Telegram operator and
-   confirm Orchestrator creates a Web Scraper card on the `wiki` board with the
-   wiki workdir.
+   confirm Orchestrator creates a Web Scraper card on the `wiki` board with
+   `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki` (not `scratch`).
 2. Confirm the resulting Markdown is under `Inbox/Clippings`, contains the
    canonical URL, UTC retrieval/capture metadata, provider/model, and a body
    SHA-256, and that a second capture receives a distinct dated filename.
 3. Run `scripts/install-wiki-triage.sh` and confirm the
    `wiki-clipping-triage` job is paused, uses the scheduled maintenance skill,
-   `/srv/hermes/wiki` workdir, `every 1d at 03:30`, and delivers to
+   `/srv/hermes/wiki` workdir, `every day at 03:30`, and delivers to
    `bot-chat:orchestrator`.
 4. Run the paused job manually against fixtures for all four topic wikis.
    Confirm each complete source moves to exactly one `<topic>/raw/clippings`

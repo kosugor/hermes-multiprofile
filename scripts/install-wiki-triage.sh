@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 name=${WIKI_TRIAGE_NAME:-wiki-clipping-triage}
-schedule=${WIKI_TRIAGE_SCHEDULE:-every 1d at 03:30}
+schedule=${WIKI_TRIAGE_SCHEDULE:-every day at 03:30}
 wiki_root=${HERMES_WIKI_ROOT:-/srv/hermes/wiki}
 timezone=${WIKI_TRIAGE_TIMEZONE:-Europe/Belgrade}
 
