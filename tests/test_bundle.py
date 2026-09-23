@@ -58,6 +58,12 @@ class BundleTests(unittest.TestCase):
             for platform in ("cli", "telegram", "api_server", "cron"):
                 self.assertEqual(expected, platform_toolsets(config, platform), f"{name}:{platform}")
 
+    def test_pinned_hermes_kanban_gate_compatibility(self):
+        orchestrator = read("profiles/orchestrator/config.yaml")
+        self.assertRegex(orchestrator, r"(?m)^toolsets: \[kanban\]$")
+        for name in WORKERS:
+            self.assertNotRegex(read(f"profiles/{name}/config.yaml"), r"(?m)^toolsets:", name)
+
     def test_bootstrap_opts_every_profile_out_of_bundled_skills(self):
         bootstrap = read("scripts/bootstrap-user.sh")
         self.assertNotIn("hermes skills opt-out", bootstrap)
@@ -508,6 +514,7 @@ class BundleTests(unittest.TestCase):
         preflight = read("scripts/gateway-preflight.sh")
         self.assertIn("TELEGRAM_ALLOWED_CHATS must equal the operator ID", preflight)
         self.assertIn("OPENAI_API_KEY is forbidden", preflight)
+        self.assertIn("requires top-level toolsets: [kanban]", preflight)
 
     def test_reviewed_tool_inventory_covers_profiles(self):
         inventory = __import__("json").loads(read("policy/tool-inventory.json"))

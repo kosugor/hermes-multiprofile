@@ -21,6 +21,12 @@ The Orchestrator profile owns one multiplexed gateway, the Kanban dispatcher, an
 the only Telegram credential. The other six profiles are workers. Kanban concurrency
 starts at one because the target machine has two CPU cores.
 
+The pinned Hermes `v2026.9.11` predates the upstream fix that makes a
+`platform_toolsets.telegram` Kanban grant pass the Kanban registry gate. The
+Orchestrator therefore also carries the narrow legacy `toolsets: [kanban]`
+compatibility opt-in. Gateway preflight requires it; remove it only as part of a
+reviewed Hermes upgrade that includes the upstream fix.
+
 Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
 `v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`.
 Its raw messages and summary DAG remain inside the Coder profile and are covered
@@ -220,6 +226,10 @@ Send an explicit command to the Telegram operator bot:
 ```text
 clip https://example.com/article
 ```
+
+After installing or changing the compatibility opt-in, restart the gateway and
+send `/new` before retrying the command. Existing conversations retain their
+previous tool schema.
 
 The Orchestrator routes that one-time capture to Web Scraper. Complete Markdown
 snapshots land in `/srv/hermes/wiki/Inbox/Clippings`; repeated captures keep

@@ -40,6 +40,11 @@ agent:
     - image_gen
     - tts
 
+# Hermes v2026.9.11's Kanban registry gate still checks this legacy key even
+# when the effective per-platform allowlists below already include `kanban`.
+# Keep this narrow compatibility opt-in until the pinned release is upgraded.
+toolsets: [kanban]
+
 platform_toolsets:
   cli: [kanban, clarify, todo, memory, session_search]
   telegram: [kanban, clarify, todo, memory, session_search]
