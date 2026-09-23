@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hermes_home=${HERMES_HOME:-$HOME/.hermes}
+hermes_checkout=${HERMES_CHECKOUT:-$hermes_home/hermes-agent}
 sandbox_image=hermes-sandbox:2026.09.11
 soak_hours=0
 online=1
@@ -127,8 +128,26 @@ for profile in orchestrator researcher coder reviewer web-monitor; do
   [[ $langfuse_release == v2026.9.11 ]] && pass "$profile Langfuse release is pinned" || fail "$profile Langfuse release is pinned"
 done
 
-hermes_script=$(readlink -f -- "$(command -v hermes)")
-hermes_python=$(sed -n '1s/^#!//p' "$hermes_script")
+hermes_python=
+for candidate in \
+  "${HERMES_PYTHON:-}" \
+  "$hermes_checkout/venv/bin/python" \
+  "$hermes_checkout/.venv/bin/python"; do
+  if [[ -n $candidate && -x $candidate ]]; then
+    hermes_python=$candidate
+    break
+  fi
+done
+
+# Retain compatibility with installs whose entry point has a direct absolute
+# Python shebang, but do not assume every Hermes launcher has that form.
+if [[ -z $hermes_python ]]; then
+  hermes_script=$(readlink -f -- "$(command -v hermes)" 2>/dev/null || true)
+  launcher_interpreter=$(sed -n '1s/^#!//p' "$hermes_script" 2>/dev/null || true)
+  if [[ $launcher_interpreter == /* && -x $launcher_interpreter ]]; then
+    hermes_python=$launcher_interpreter
+  fi
+fi
 if [[ -x $hermes_python ]]; then
   run_check "resolved tool inventories match the reviewed allowlist" \
     "$hermes_python" "$repo_root/scripts/audit-tools.py" --bundle "$repo_root" \
@@ -202,6 +221,20 @@ if (( online )); then
 fi
 
 if [[ $web_mode == full ]]; then
+firecrawl_denied_private_target() {
+  jq -e '
+    .success == false or
+    (
+      .success == true and
+      .data.metadata.statusCode == 403 and
+      (
+        ((.data.metadata.error // "") + "\n" + (.data.markdown // ""))
+        | test("blocked|private/internal|security rules"; "i")
+      )
+    )
+  ' >/dev/null 2>&1
+}
+
 for blocked_url in \
   'http://169.254.169.254/latest/meta-data/' \
   'http://2852039166/latest/meta-data/' \
@@ -217,10 +250,10 @@ for blocked_url in \
     'http://127.0.0.1:3002/v1/scrape' 2>/dev/null || true)
   if [[ -z $response ]] || ! jq -e 'type == "object" and has("success")' <<<"$response" >/dev/null 2>&1; then
     fail "Firecrawl returns an explicit denial for private target: $blocked_url"
-  elif jq -e '.success == true' <<<"$response" >/dev/null 2>&1; then
-    fail "Firecrawl rejects private target: $blocked_url"
-  else
+  elif firecrawl_denied_private_target <<<"$response"; then
     pass "Firecrawl rejects private target: $blocked_url"
+  else
+    fail "Firecrawl rejects private target: $blocked_url"
   fi
 done
 fi
