@@ -192,7 +192,7 @@ class BundleTests(unittest.TestCase):
             self.assertIn("web", set(re.findall(r"[a-z_]+", disabled_text)), name)
             self.assertNotRegex(config, r"(?m)^web:$", name)
 
-    def test_worker_sandboxes_are_networkless_and_ephemeral(self):
+    def test_worker_sandboxes_are_networkless_and_not_reused_across_processes(self):
         required = (
             "backend: docker",
             "lifetime_seconds: 600",
@@ -203,13 +203,14 @@ class BundleTests(unittest.TestCase):
             'docker_extra_args: ["--pids-limit", "256"]',
             "container_cpu: 1",
             "container_memory: 1536",
-            "container_persistent: false",
             "docker_persist_across_processes: false",
         )
         for name in WORKERS:
             config = read(f"profiles/{name}/config.yaml")
             for line in required:
                 self.assertIn(line, config, f"{name}: {line}")
+            expected_persistence = "true" if name == "web-scraper" else "false"
+            self.assertIn(f"container_persistent: {expected_persistence}", config, name)
             self.assertNotRegex(config, r"(?m)^\s+cwd:")
             self.assertNotIn("docker.sock", config)
             self.assertNotIn("docker_volumes:", config)
@@ -320,6 +321,8 @@ class BundleTests(unittest.TestCase):
         self.assertIn("corrective durable comment", orchestrator)
         self.assertIn("is superseded", orchestrator)
         self.assertIn("unblock the same", orchestrator)
+        self.assertIn("/workspace/.git", orchestrator)
+        self.assertIn("fresh idempotency key", orchestrator)
         scraper_soul = read("profiles/web-scraper/SOUL.md")
         self.assertIn("host-side source path", scraper_soul)
         self.assertIn("Block only", scraper_soul)
@@ -329,6 +332,12 @@ class BundleTests(unittest.TestCase):
         self.assertIn("host-side bind-mount source", clipper)
         self.assertIn("same container path", clipper)
         self.assertIn("`/workspace` mount point", clipper)
+        self.assertIn("mount canary", clipper)
+        self.assertIn("never claim a host-equivalent", clipper)
+        scraper_config = read("profiles/web-scraper/config.yaml")
+        self.assertIn("Pinned Hermes v2026.9.11", scraper_config)
+        self.assertIn("container_persistent: true", scraper_config)
+        self.assertIn("docker_persist_across_processes: false", scraper_config)
         for field in ("retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
             self.assertIn(field, clipper)
         triage = read("profiles/wiki-maintainer/skills/scheduled-wiki-maintenance/SKILL.md")
@@ -635,6 +644,9 @@ class BundleTests(unittest.TestCase):
         self.assertIn("firecrawl_denied_private_target", validate)
         self.assertIn(".data.metadata.statusCode == 403", validate)
         self.assertIn('test("blocked|private/internal|security rules"; "i")', validate)
+        self.assertIn("Web Scraper workspace-mount compatibility settings", validate)
+        self.assertIn("container_persistent: true", validate)
+        self.assertIn("docker_persist_across_processes: false", validate)
         gateway = read("scripts/gateway-preflight.sh")
         self.assertIn('"$repo_root/scripts/verify-langfuse-pin.sh"', gateway)
         self.assertIn('hermes -p "$profile" config check', gateway)

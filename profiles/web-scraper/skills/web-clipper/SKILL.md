@@ -23,8 +23,12 @@ message as a clipping request.
 For a Kanban `dir` workspace, treat the task's absolute `workspace_path` as the
 host-side bind-mount source, not as a path that should exist inside Docker.
 Hermes exposes it to terminal and file operations at `/workspace`. At startup,
-verify `/workspace` exists and is writable. Do not inspect `/srv/hermes/wiki` or
-block merely because that host path is absent inside the sandbox.
+verify `/workspace` exists and is writable. For the configured wiki clipping
+workflow, also require `/workspace/.git` to exist and require
+`git -C /workspace rev-parse --show-toplevel` to resolve to `/workspace`. This is
+the mount canary: an empty, container-local `/workspace` is not the wiki and
+must never be accepted. Do not inspect `/srv/hermes/wiki` or block merely
+because that host path is absent inside the sandbox.
 
 1. Normalize the URL and remove obvious tracking parameters when safe.
 2. Call `web_extract` using Firecrawl.
@@ -68,7 +72,11 @@ block merely because that host path is absent inside the sandbox.
    `/srv/hermes/wiki/Inbox/Clippings` maps to this same container path; it does
    not override the `/workspace` mount point.
 9. Run `scripts/validate-capture.py` on the saved Markdown and return the
-   created file path plus a one-sentence description.
+   created file path plus a one-sentence description. Before completing the
+   task, re-run the Git-root canary and confirm the new file is readable from
+   that same `/workspace`. If the canary fails, block the task and explicitly
+   state that the Docker workspace was ephemeral; never claim a host-equivalent
+   path.
 
 ## Search Rule
 

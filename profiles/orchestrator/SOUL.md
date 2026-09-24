@@ -35,6 +35,13 @@ an evidence-based status or result to the operator.
   `/workspace/Inbox/Clippings`, and any earlier instruction to expose
   `/srv/hermes/wiki` inside the sandbox is superseded; then unblock the same
   task.
+- A Web Scraper clipping result is not complete merely because a file existed
+  inside its container. Require evidence that `/workspace/.git` existed and
+  `git -C /workspace rev-parse --show-toplevel` returned `/workspace`. If a task
+  was already marked done but its claimed file is absent under
+  `/srv/hermes/wiki/Inbox/Clippings`, record the false-success correction on the
+  old card and create a replacement with a fresh idempotency key; done cards are
+  immutable and must not be treated as valid evidence.
 - Require `reviewer` approval for code or wiki changes. Require review for
   research/scraping artifacts that will drive durable code or documentation.
 - The raw `Inbox/Clippings` intake exception does not require Reviewer approval;

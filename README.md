@@ -254,6 +254,14 @@ host path is mounted at `/workspace` and supersedes the earlier request to make
 `/srv/hermes/wiki` visible inside Docker. Then unblock the same card; no
 replacement is needed.
 
+The pinned release also needs `container_persistent: true` for Web Scraper so
+its process-level task cwd is retained as the Docker bind-mount source;
+cross-process reuse remains disabled. The clipping skill treats the wiki's
+`.git` directory as a mount canary and must not complete from an empty,
+container-local `/workspace`. If a card was already marked done but its file is
+missing on the host, retain that card as false-success evidence and create a
+replacement with a fresh idempotency key after deploying this workaround.
+
 Install the daily Wiki Maintainer triage job. It is created paused so the first
 run can be inspected before unattended local commits are enabled:
 
