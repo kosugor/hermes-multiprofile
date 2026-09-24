@@ -20,6 +20,12 @@ message as a clipping request.
 
 ## Procedure
 
+For a Kanban `dir` workspace, treat the task's absolute `workspace_path` as the
+host-side bind-mount source, not as a path that should exist inside Docker.
+Hermes exposes it to terminal and file operations at `/workspace`. At startup,
+verify `/workspace` exists and is writable. Do not inspect `/srv/hermes/wiki` or
+block merely because that host path is absent inside the sandbox.
+
 1. Normalize the URL and remove obvious tracking parameters when safe.
 2. Call `web_extract` using Firecrawl.
 3. Evaluate extraction quality:
@@ -58,7 +64,9 @@ message as a clipping request.
    preserves a dated snapshot when the same URL is clipped more than once.
 8. Save to `/workspace/Inbox/Clippings/<filename>.md` unless the task
    specifies a different workspace-relative destination. Create the directory
-   if it does not exist.
+   if it does not exist. A task referring to the host destination
+   `/srv/hermes/wiki/Inbox/Clippings` maps to this same container path; it does
+   not override the `/workspace` mount point.
 9. Run `scripts/validate-capture.py` on the saved Markdown and return the
    created file path plus a one-sentence description.
 

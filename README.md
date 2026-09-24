@@ -237,12 +237,22 @@ dated snapshots with provenance and body hashes. Ordinary URLs in other
 messages are not clipped automatically. The card explicitly uses the `dir`
 workspace kind at `/srv/hermes/wiki`; on the pinned Hermes release, merely
 placing the card on a board with that default workdir still creates a scratch
-workspace.
+workspace. That absolute path is the host-side bind-mount source. Web Scraper
+accesses it as `/workspace` inside its Docker sandbox and writes clippings to
+`/workspace/Inbox/Clippings`; `/srv/hermes/wiki` is not expected to exist in the
+container.
 
 If an older Orchestrator prompt already created a blocked scratch card, archive
 that card and retry after redeploying the profile, restarting the gateway, and
 sending `/new`. Workspace kind and path cannot be repaired with `kanban edit`
 on the pinned release.
+
+If a correctly configured `dir:/srv/hermes/wiki` card was blocked only because
+the worker looked for that host path inside Docker, deploy the updated Web
+Scraper profile. Before unblocking, append a corrective card comment that the
+host path is mounted at `/workspace` and supersedes the earlier request to make
+`/srv/hermes/wiki` visible inside Docker. Then unblock the same card; no
+replacement is needed.
 
 Install the daily Wiki Maintainer triage job. It is created paused so the first
 run can be inspected before unattended local commits are enabled:

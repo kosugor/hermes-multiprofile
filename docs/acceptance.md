@@ -127,9 +127,11 @@ with `scripts/install-monitor.sh`, then:
 1. Send `clip https://example.com/` from the authorized Telegram operator and
    confirm Orchestrator creates a Web Scraper card on the `wiki` board with
    `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki` (not `scratch`).
-2. Confirm the resulting Markdown is under `Inbox/Clippings`, contains the
-   canonical URL, UTC retrieval/capture metadata, provider/model, and a body
-   SHA-256, and that a second capture receives a distinct dated filename.
+2. Confirm the worker uses the Docker-visible `/workspace` mount rather than
+   looking for `/srv/hermes/wiki` inside the sandbox. Confirm the resulting
+   Markdown is under `Inbox/Clippings`, contains the canonical URL, UTC
+   retrieval/capture metadata, provider/model, and a body SHA-256, and that a
+   second capture receives a distinct dated filename.
 3. Run `scripts/install-wiki-triage.sh` and confirm the
    `wiki-clipping-triage` job is paused, uses the scheduled maintenance skill,
    `/srv/hermes/wiki` workdir, `every day at 03:30`, and delivers to

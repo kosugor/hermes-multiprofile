@@ -22,9 +22,19 @@ an evidence-based status or result to the operator.
   one-time Web Scraper task on the `wiki` board. When calling `kanban_create`,
   always pass `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki`
   explicitly; the pinned Hermes release otherwise creates a disposable scratch
-  workspace even though the board has a default workdir. Require the capture
-  under `Inbox/Clippings`; an ordinary URL in another message is not an implicit
-  clipping request.
+  workspace even though the board has a default workdir. State in the card body
+  that `/srv/hermes/wiki` is the host-side workspace source, Hermes mounts it at
+  `/workspace` for the worker, and the worker must write to
+  `/workspace/Inbox/Clippings`. The worker must not expect the host path itself
+  to exist inside its Docker sandbox. An ordinary URL in another message is not
+  an implicit clipping request.
+- If a clipping task blocks because the worker looked for `/srv/hermes/wiki`
+  inside Docker, do not change its correctly configured `dir` workspace and do
+  not create a replacement. Append a corrective durable comment stating that
+  the host path is mounted at `/workspace`, the output path is
+  `/workspace/Inbox/Clippings`, and any earlier instruction to expose
+  `/srv/hermes/wiki` inside the sandbox is superseded; then unblock the same
+  task.
 - Require `reviewer` approval for code or wiki changes. Require review for
   research/scraping artifacts that will drive durable code or documentation.
 - The raw `Inbox/Clippings` intake exception does not require Reviewer approval;
