@@ -104,6 +104,15 @@ if grep -Fxq '  docker_mount_cwd_to_workspace: true' "$web_scraper_config" \
 else
   fail "Web Scraper workspace-mount compatibility settings"
 fi
+wiki_maintainer_config="$hermes_home/profiles/wiki-maintainer/config.yaml"
+if grep -Fxq 'timezone: Europe/Belgrade' "$wiki_maintainer_config" \
+  && grep -Fxq '  docker_mount_cwd_to_workspace: true' "$wiki_maintainer_config" \
+  && grep -Fxq '  container_persistent: true' "$wiki_maintainer_config" \
+  && grep -Fxq '  docker_persist_across_processes: false' "$wiki_maintainer_config"; then
+  pass "Wiki Maintainer triage workspace and timezone settings"
+else
+  fail "Wiki Maintainer triage workspace and timezone settings"
+fi
 run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
 run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"
 run_check "Wiki Maintainer QMD runtime is pinned" "$repo_root/scripts/verify-qmd-pin.sh"

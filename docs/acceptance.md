@@ -136,9 +136,11 @@ with `scripts/install-monitor.sh`, then:
    second capture receives a distinct dated filename.
 3. Run `scripts/install-wiki-triage.sh` and confirm the
    `wiki-clipping-triage` job is paused, uses the scheduled maintenance skill,
-   `/srv/hermes/wiki` workdir, `every day at 03:30`, and delivers to
-   `bot-chat:orchestrator`.
-4. Run the paused job manually against fixtures for all four topic wikis.
+   `/srv/hermes/wiki` workdir, `every day at 03:30` in Europe/Belgrade, and
+   delivers to `bot-chat:orchestrator`.
+4. Run the paused job manually against fixtures for all four topic wikis. Check
+   its run record, dated maintenance report, and host wiki Git status before
+   treating the CLI's `Ran now: succeeded` line as a completed triage.
    Confirm each complete source moves to exactly one `<topic>/raw/clippings`
    directory, partial captures remain in the inbox, and curated pages are
    updated or created with the source URL and canonical clipping link.
@@ -150,6 +152,14 @@ with `scripts/install-monitor.sh`, then:
    changes, and leave failed sources in `Inbox/Clippings`.
 7. Resume the job only after the manual result, commit, report, and Telegram
    delivery have been inspected.
+
+For pre-contract September 2026 clippings, update the existing paused job with
+`WIKI_TRIAGE_UPDATE_EXISTING=1 scripts/install-wiki-triage.sh`, then run triage
+manually. Confirm the profile itself reads all four legacy Markdown files,
+extracts their explicit source and capture headers, preserves each article
+body in its archive copy, records `capture_status: legacy-reviewed` with
+honest source/completeness caveats, updates curated pages, and commits only
+successful triage paths. No separate migration command is used.
 
 ## Soak and recovery
 

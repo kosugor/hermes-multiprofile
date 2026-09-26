@@ -254,9 +254,9 @@ host path is mounted at `/workspace` and supersedes the earlier request to make
 `/srv/hermes/wiki` visible inside Docker. Then unblock the same card; no
 replacement is needed.
 
-The pinned release also needs `container_persistent: true` for Web Scraper so
-its process-level task cwd is retained as the Docker bind-mount source;
-cross-process reuse remains disabled. The clipping skill treats the wiki's
+The pinned release also needs `container_persistent: true` for Web Scraper and
+Wiki Maintainer so their process-level task cwd is retained as the Docker
+bind-mount source; cross-process reuse remains disabled. The clipping skill treats the wiki's
 `.git` directory as a mount canary and must not complete from an empty,
 container-local `/workspace`. If a card was already marked done but its file is
 missing on the host, retain that card as false-success evidence and create a
@@ -271,6 +271,13 @@ hermes -p wiki-maintainer cron run wiki-clipping-triage
 hermes -p wiki-maintainer cron resume wiki-clipping-triage
 ```
 
+Before resuming, check `hermes -p wiki-maintainer cron runs wiki-clipping-triage`,
+the profile-local `cron/output/wiki-clipping-triage/` files if no run is listed,
+`/srv/hermes/wiki/.hermes-maintenance/reports/`, and the wiki Git status and
+latest commit. A successful agent run does not by itself mean any clipping was
+processed. The Wiki Maintainer profile sets `timezone: Europe/Belgrade` so the
+03:30 schedule follows local time, including daylight saving changes.
+
 The job runs daily at 03:30 Europe/Belgrade, processes at most 20 inbox
 clippings, archives each source under one of
 `investments/raw/clippings`, `devops/raw/clippings`,
@@ -278,6 +285,31 @@ clippings, archives each source under one of
 creates curated pages with source links. It commits only successful paths from
 that run; partial captures, conflicts, and unrelated working-tree changes stay
 untouched. Empty successful runs return `[SILENT]`.
+
+For clippings created before the capture frontmatter contract, deploy the
+updated Wiki Maintainer profile and skill, then update the existing paused job
+and run triage directly:
+
+```bash
+profile="$HOME/.hermes/profiles/wiki-maintainer"
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+cp -p "$profile/config.yaml" "$profile/config.yaml.before-legacy-triage.$stamp"
+cp -p "$profile/skills/scheduled-wiki-maintenance/SKILL.md" \
+  "$profile/skills/scheduled-wiki-maintenance/SKILL.md.before-legacy-triage.$stamp"
+install -m 0644 profiles/wiki-maintainer/config.yaml "$profile/config.yaml"
+install -m 0644 profiles/wiki-maintainer/skills/scheduled-wiki-maintenance/SKILL.md \
+  "$profile/skills/scheduled-wiki-maintenance/SKILL.md"
+hermes -p wiki-maintainer config check
+WIKI_TRIAGE_UPDATE_EXISTING=1 ./scripts/install-wiki-triage.sh
+hermes -p wiki-maintainer cron run wiki-clipping-triage
+```
+
+The triage run recognizes legacy title/source/capture headers, reviews each
+clipping, and adds honest legacy provenance metadata as it archives the file.
+It preserves the Markdown body, records uncertainty about source access or
+capture completeness, and includes that uncertainty in curated pages. The
+installer update keeps the existing job paused; inspect the local triage commit
+and report before resuming the schedule.
 
 ## Operations
 

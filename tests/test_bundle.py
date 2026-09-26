@@ -209,7 +209,7 @@ class BundleTests(unittest.TestCase):
             config = read(f"profiles/{name}/config.yaml")
             for line in required:
                 self.assertIn(line, config, f"{name}: {line}")
-            expected_persistence = "true" if name == "web-scraper" else "false"
+            expected_persistence = "true" if name in {"web-scraper", "wiki-maintainer"} else "false"
             self.assertIn(f"container_persistent: {expected_persistence}", config, name)
             self.assertNotRegex(config, r"(?m)^\s+cwd:")
             self.assertNotIn("docker.sock", config)
@@ -298,6 +298,8 @@ class BundleTests(unittest.TestCase):
 
     def test_wiki_triage_installer_is_paused_and_scoped(self):
         script = read("scripts/install-wiki-triage.sh")
+        wiki_config = read("profiles/wiki-maintainer/config.yaml")
+        self.assertIn("timezone: Europe/Belgrade", wiki_config)
         self.assertIn("every day at 03:30", script)
         self.assertNotIn("every 1d at 03:30", script)
         self.assertIn("wiki-clipping-triage", script)
@@ -310,6 +312,9 @@ class BundleTests(unittest.TestCase):
         self.assertIn("investments", script)
         self.assertIn("software-development", script)
         self.assertIn("WIKI_TRIAGE_TIMEZONE", script)
+        self.assertIn("WIKI_TRIAGE_UPDATE_EXISTING", script)
+        self.assertIn("Review legacy plain Markdown clippings", script)
+        self.assertIn("Do not require a separate", script)
 
     def test_clipping_contract_and_triage_paths(self):
         orchestrator = read("profiles/orchestrator/SOUL.md")
@@ -341,6 +346,11 @@ class BundleTests(unittest.TestCase):
         for field in ("retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
             self.assertIn(field, clipper)
         triage = read("profiles/wiki-maintainer/skills/scheduled-wiki-maintenance/SKILL.md")
+        self.assertIn("git -C /workspace rev-parse --show-toplevel", triage)
+        self.assertIn("explicit workspace error", triage)
+        self.assertIn("legacy_capture: true", triage)
+        self.assertIn("Do not require a separate migration", triage)
+        self.assertIn("untracked", triage)
         self.assertIn("Process at most 20 files", triage)
         self.assertIn("investments", triage)
         self.assertIn("devops", triage)
