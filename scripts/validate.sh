@@ -121,7 +121,6 @@ run_check "Wiki Maintainer QMD index is readable" \
     "PATH=$hermes_home/node/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" \
     "QMD_CONFIG_DIR=$hermes_home/profiles/wiki-maintainer/qmd" \
     QMD_FORCE_CPU=1 \
-    QMD_AMPERE_NATIVE_BUILD=1 \
     "$hermes_home/qmd-runtime/node_modules/.bin/qmd" status
 run_check "Langfuse SDK is pinned" "$repo_root/scripts/verify-langfuse-pin.sh"
 

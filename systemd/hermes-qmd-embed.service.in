@@ -9,7 +9,6 @@ TimeoutStartSec=65min
 Environment=PATH=%h/.hermes/node/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 Environment=QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd
 Environment=QMD_FORCE_CPU=1
-Environment=QMD_AMPERE_NATIVE_BUILD=1
 ExecStart=%h/.hermes/qmd-runtime/node_modules/.bin/qmd embed --timeout 60
 Nice=15
 CPUQuota=50%

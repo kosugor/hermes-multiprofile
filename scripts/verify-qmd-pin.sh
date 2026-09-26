@@ -9,7 +9,6 @@ runtime="$hermes_home/qmd-runtime"
 package_json="$runtime/node_modules/@tobilu/qmd/package.json"
 package_lock="$runtime/package-lock.json"
 qmd_bin="$runtime/node_modules/.bin/qmd"
-qmd_llm_js="$runtime/node_modules/@tobilu/qmd/dist/llm.js"
 managed_node="$hermes_home/node/bin/node"
 qmd_config="$hermes_home/profiles/wiki-maintainer/qmd/index.yml"
 model_dir="$HOME/.cache/qmd/models"
@@ -30,12 +29,6 @@ installed_version=$(
   exit 1
 }
 
-[[ -f $qmd_llm_js ]] \
-  && grep -Fq 'QMD_AMPERE_NATIVE_BUILD' "$qmd_llm_js" \
-  && grep -Fq 'GGML_CPU_KLEIDIAI' "$qmd_llm_js" || {
-  echo "The reviewed Ampere-native llama.cpp patch is missing from QMD." >&2
-  exit 1
-}
 locked_integrity=$(
   "$managed_node" -p \
     "require(process.argv[1]).packages['node_modules/@tobilu/qmd'].integrity" \
