@@ -418,6 +418,11 @@ class BundleTests(unittest.TestCase):
         self.assertIn("ubuntu:22.04|ubuntu:24.04|debian:12", bootstrap)
         self.assertIn("CgroupVersion", bootstrap)
         self.assertIn('HERMES_HOME=$HOME/.hermes', bootstrap)
+        self.assertIn('expected_home=$(getent passwd "$(id -un)"', bootstrap)
+        self.assertIn('XDG_RUNTIME_DIR="$user_runtime_dir"', bootstrap)
+        self.assertIn('DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime_dir/bus"', bootstrap)
+        self.assertIn("systemctl --user show-environment", bootstrap)
+        self.assertIn("Log in directly", bootstrap)
 
     def test_hermes_installer_is_release_and_checksum_pinned(self):
         installer = read("scripts/install-hermes.sh")
@@ -599,6 +604,8 @@ class BundleTests(unittest.TestCase):
 
     def test_sandbox_base_and_dependency_inputs_are_locked(self):
         dockerfile = read("images/hermes-sandbox/Dockerfile")
+        self.assertIn("# check=skip=InvalidDefaultArgInFrom", dockerfile)
+        self.assertIn("BASE_IMAGE is intentionally required", dockerfile)
         self.assertIn("ARG BASE_IMAGE", dockerfile)
         self.assertNotRegex(dockerfile, r"(?m)^ARG BASE_IMAGE=.+:")
         self.assertIn("ARG DEBIAN_SNAPSHOT=20260909T000000Z", dockerfile)

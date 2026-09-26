@@ -15,6 +15,20 @@ chmod 0755 "$repo_root"/scripts/*.sh
   echo "This hardened systemd bundle requires HERMES_HOME=$HOME/.hermes." >&2
   exit 1
 }
+expected_home=$(getent passwd "$(id -un)" | cut -d: -f6)
+[[ $HOME == "$expected_home" ]] || {
+  echo "HOME=$HOME does not match the login home for $(id -un): $expected_home" >&2
+  echo "Log in directly as the dedicated Hermes user; do not run bootstrap through sudo -u or su without a login shell." >&2
+  exit 1
+}
+user_runtime_dir="/run/user/$(id -u)"
+export XDG_RUNTIME_DIR="$user_runtime_dir"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime_dir/bus"
+if [[ ! -S $user_runtime_dir/bus ]] || ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "The systemd user bus is unavailable for $(id -un) at $user_runtime_dir/bus." >&2
+  echo "Run scripts/install-host.sh as root if needed, then log in directly as $(id -un) and retry." >&2
+  exit 1
+fi
 [[ $(uname -m) == aarch64 || $(uname -m) == arm64 ]] || { echo "ARM64 is required." >&2; exit 1; }
 [[ -e /sys/fs/cgroup/cgroup.controllers ]] || { echo "cgroup v2 is required." >&2; exit 1; }
 # shellcheck disable=SC1091

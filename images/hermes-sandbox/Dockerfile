@@ -1,3 +1,8 @@
+# check=skip=InvalidDefaultArgInFrom
+
+# BASE_IMAGE is intentionally required: callers supply the reviewed digest from
+# infra/images.lock.env. A fallback tag would make an omitted build argument
+# silently mutable.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
