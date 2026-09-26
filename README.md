@@ -52,7 +52,8 @@ rebuildable index and approximately 2 GB of on-demand local models remain under
 On its reviewed ARM64 hosts, the managed QMD install builds the CPU-only
 node-llama-cpp backend with native Ampere detection and KleidiAI kernels. The
 version-gated patch is reapplied after every QMD install and verified before
-the runtime is accepted.
+the runtime is accepted. Host preparation installs `build-essential` and
+`cmake`, which are required for this source build.
 Run `bash scripts/benchmark-qmd-ampere.sh` on an A1 host to compare the
 packaged binding with the native build against the current wiki index.
 

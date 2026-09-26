@@ -86,7 +86,7 @@ else
     libglib2.0-0
   )
 fi
-apt-get install -y ca-certificates curl dbus-user-session fuse-overlayfs git gnupg jq nftables openssl slirp4netns tar uidmap xz-utils "${browser_packages[@]}"
+apt-get install -y build-essential ca-certificates cmake curl dbus-user-session fuse-overlayfs git gnupg jq nftables openssl slirp4netns tar uidmap xz-utils "${browser_packages[@]}"
 
 if ! command -v dockerd-rootless-setuptool.sh >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings

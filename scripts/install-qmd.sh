@@ -37,6 +37,8 @@ export PATH="$managed_node:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 export QMD_CONFIG_DIR="$qmd_config_dir"
 export QMD_FORCE_CPU=1
 export QMD_AMPERE_NATIVE_BUILD=1
+export NODE_LLAMA_CPP_CMAKE_OPTION_GGML_NATIVE=ON
+export NODE_LLAMA_CPP_CMAKE_OPTION_GGML_CPU_KLEIDIAI=ON
 
 install -d -m 0755 "$runtime" "$qmd_config_dir" "$HOME/.cache/qmd"
 install -m 0644 "$repo_root/qmd/package.json" "$runtime/package.json"
@@ -64,6 +66,22 @@ fi
 # requests GGML_NATIVE plus Arm KleidiAI kernels; qmd embed below performs the
 # actual cached build while this installer still has write access to the runtime.
 bash "$repo_root/scripts/patch-qmd-for-ampere.sh" "$runtime" "$managed_node/node"
+
+# node-llama-cpp's `canWriteLlamaDir()` reports false until its source-build
+# directory exists. Build explicitly here so QMD's CPU-only loader can locate
+# the exact native binary even after systemd makes the runtime read-only.
+node_llama_cli="$runtime/node_modules/.bin/node-llama-cpp"
+[[ -x $node_llama_cli ]] || {
+  echo "node-llama-cpp CLI is missing from the managed QMD runtime." >&2
+  exit 1
+}
+for build_tool in cmake c++; do
+  command -v "$build_tool" >/dev/null 2>&1 || {
+    echo "Ampere-native llama.cpp requires $build_tool; install build-essential and cmake." >&2
+    exit 1
+  }
+done
+"$node_llama_cli" source download --gpu false --noUsageExample
 
 locked_integrity=$(
   "$managed_node/node" -p \

@@ -299,11 +299,18 @@ class BundleTests(unittest.TestCase):
         self.assertIn("QMD_AMPERE_NATIVE_BUILD", patch)
         self.assertIn("GGML_NATIVE", patch)
         self.assertIn("GGML_CPU_KLEIDIAI", patch)
+        self.assertIn('source download --gpu false --noUsageExample', installer)
+        self.assertIn("NODE_LLAMA_CPP_CMAKE_OPTION_GGML_CPU_KLEIDIAI=ON", installer)
         self.assertIn("QMD_AMPERE_NATIVE_BUILD", verifier)
         self.assertIn('"QMD_AMPERE_NATIVE_BUILD": "1"', read("scripts/audit-tools.py"))
         benchmark = read("scripts/benchmark-qmd-ampere.sh")
         self.assertIn("Packaged ARM64 llama.cpp", benchmark)
         self.assertIn("Ampere-native KleidiAI llama.cpp", benchmark)
+
+    def test_host_installs_ampere_llama_build_requirements(self):
+        install = read("scripts/install-host.sh")
+        self.assertIn("build-essential", install)
+        self.assertIn("cmake", install)
 
     def test_monitor_installs_paused_with_orchestrator_delivery(self):
         script = read("scripts/install-monitor.sh")
