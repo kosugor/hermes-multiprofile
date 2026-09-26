@@ -101,6 +101,7 @@ QMD_SERVER_POLICY = {
         "PATH": "${userHome}/.hermes/node/bin:/usr/local/bin:/usr/bin:/bin",
         "QMD_CONFIG_DIR": "${userHome}/.hermes/profiles/wiki-maintainer/qmd",
         "QMD_FORCE_CPU": "1",
+        "QMD_AMPERE_NATIVE_BUILD": "1",
     },
     "timeout": 120,
     "connect_timeout": 45,

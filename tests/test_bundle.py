@@ -273,6 +273,7 @@ class BundleTests(unittest.TestCase):
         bootstrap = read("scripts/bootstrap-user.sh")
         self.assertIn("QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd", service)
         self.assertIn("QMD_FORCE_CPU=1", service)
+        self.assertIn("QMD_AMPERE_NATIVE_BUILD=1", service)
         self.assertIn("TimeoutStartSec=15min", service)
         self.assertIn("CPUQuota=25%", service)
         self.assertIn("MemoryMax=1G", service)
@@ -281,6 +282,7 @@ class BundleTests(unittest.TestCase):
         embed_service = read("systemd/hermes-qmd-embed.service.in")
         embed_timer = read("systemd/hermes-qmd-embed.timer.in")
         self.assertIn('qmd embed --timeout 60', embed_service)
+        self.assertIn("QMD_AMPERE_NATIVE_BUILD=1", embed_service)
         self.assertIn("CPUQuota=50%", embed_service)
         self.assertIn("MemoryMax=3G", embed_service)
         self.assertIn("OnCalendar=*-*-* 02:30:00", embed_timer)
@@ -288,6 +290,20 @@ class BundleTests(unittest.TestCase):
         self.assertIn("Environment=TZ=Europe/Belgrade", gateway)
         self.assertIn("hermes-qmd-index.timer", bootstrap)
         self.assertIn("hermes-qmd-embed.timer", bootstrap)
+
+    def test_qmd_ampere_patch_is_installed_and_verified(self):
+        installer = read("scripts/install-qmd.sh")
+        patch = read("scripts/patch-qmd-for-ampere.sh")
+        verifier = read("scripts/verify-qmd-pin.sh")
+        self.assertIn('patch-qmd-for-ampere.sh" "$runtime" "$managed_node/node"', installer)
+        self.assertIn("QMD_AMPERE_NATIVE_BUILD", patch)
+        self.assertIn("GGML_NATIVE", patch)
+        self.assertIn("GGML_CPU_KLEIDIAI", patch)
+        self.assertIn("QMD_AMPERE_NATIVE_BUILD", verifier)
+        self.assertIn('"QMD_AMPERE_NATIVE_BUILD": "1"', read("scripts/audit-tools.py"))
+        benchmark = read("scripts/benchmark-qmd-ampere.sh")
+        self.assertIn("Packaged ARM64 llama.cpp", benchmark)
+        self.assertIn("Ampere-native KleidiAI llama.cpp", benchmark)
 
     def test_monitor_installs_paused_with_orchestrator_delivery(self):
         script = read("scripts/install-monitor.sh")

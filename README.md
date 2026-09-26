@@ -49,6 +49,13 @@ overnight timer refreshes embeddings and the semantic index at half a CPU. The
 rebuildable index and approximately 2 GB of on-demand local models remain under
 `~/.cache/qmd` and are intentionally excluded from state backups.
 
+On its reviewed ARM64 hosts, the managed QMD install builds the CPU-only
+node-llama-cpp backend with native Ampere detection and KleidiAI kernels. The
+version-gated patch is reapplied after every QMD install and verified before
+the runtime is accepted.
+Run `bash scripts/benchmark-qmd-ampere.sh` on an A1 host to compare the
+packaged binding with the native build against the current wiki index.
+
 Native Hermes `execute_code` is disabled. File and shell operations use an
 ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
 Reviewer, Web Scraper, and Web Monitor, and calls loopback-only SearXNG and

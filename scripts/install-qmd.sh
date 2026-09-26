@@ -36,6 +36,7 @@ node_major=$("$managed_node/node" -p 'process.versions.node.split(".")[0]')
 export PATH="$managed_node:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 export QMD_CONFIG_DIR="$qmd_config_dir"
 export QMD_FORCE_CPU=1
+export QMD_AMPERE_NATIVE_BUILD=1
 
 install -d -m 0755 "$runtime" "$qmd_config_dir" "$HOME/.cache/qmd"
 install -m 0644 "$repo_root/qmd/package.json" "$runtime/package.json"
@@ -58,6 +59,11 @@ if [[ $installed_version != "$qmd_version" \
   "$managed_node/npm" ci --omit=dev --no-audit --no-fund --prefix "$runtime"
   printf '%s\n' "$lock_sha256" > "$runtime/.package-lock.sha256"
 fi
+
+# Prime a local llama.cpp build for Ampere Altra / Neoverse-N1.  The patch
+# requests GGML_NATIVE plus Arm KleidiAI kernels; qmd embed below performs the
+# actual cached build while this installer still has write access to the runtime.
+bash "$repo_root/scripts/patch-qmd-for-ampere.sh" "$runtime" "$managed_node/node"
 
 locked_integrity=$(
   "$managed_node/node" -p \
