@@ -28,12 +28,12 @@ run_mode() {
   local label=$1 native_build=$2 run
   echo "$label ($runs vsearch runs)"
   for ((run = 1; run <= runs; run++)); do
-    /usr/bin/time -f "  run $run: %e s" \
-      env \
-        "QMD_CONFIG_DIR=$qmd_config_dir" \
-        QMD_FORCE_CPU=1 \
-        "QMD_AMPERE_NATIVE_BUILD=$native_build" \
-        "$qmd_bin" vsearch "$query" -n 5 --json >/dev/null
+    TIMEFORMAT="  run $run: %R s"
+    time env \
+      "QMD_CONFIG_DIR=$qmd_config_dir" \
+      QMD_FORCE_CPU=1 \
+      "QMD_AMPERE_NATIVE_BUILD=$native_build" \
+      "$qmd_bin" vsearch "$query" -n 5 --json >/dev/null
   done
 }
 

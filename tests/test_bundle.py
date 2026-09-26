@@ -306,6 +306,7 @@ class BundleTests(unittest.TestCase):
         benchmark = read("scripts/benchmark-qmd-ampere.sh")
         self.assertIn("Packaged ARM64 llama.cpp", benchmark)
         self.assertIn("Ampere-native KleidiAI llama.cpp", benchmark)
+        self.assertNotIn("/usr/bin/time", benchmark)
 
     def test_host_installs_ampere_llama_build_requirements(self):
         install = read("scripts/install-host.sh")
