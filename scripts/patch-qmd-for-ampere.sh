@@ -31,38 +31,40 @@ const marker = "QMD_AMPERE_NATIVE_BUILD";
 
 if (source.includes(marker)) process.exit(0);
 
-const anchor = "      const loadLlama = async (gpu, sourceBuildAllowed = canBuild, buildOverride) =>\n";
-const addition = [
-  "      // Hermes enables this only on Ampere Altra (Neoverse-N1) hosts.",
-  "      // A matching local build is selected even when the service sandbox makes",
-  "      // node_modules read-only; installation primes it before the service starts.",
-  "      const useAmpereNativeBuild = process.env.QMD_AMPERE_NATIVE_BUILD === \"1\";",
-  "      const ampereCmakeOptions = useAmpereNativeBuild ? {",
-  "        GGML_NATIVE: \"ON\",",
-  "        GGML_CPU_KLEIDIAI: \"ON\"",
-  "      } : undefined;",
-].join("\n") + "\n";
-
-if (!source.includes(anchor)) {
+const loaderPattern = /^([ \t]*)const loadLlama = async \(\s*gpu,\s*sourceBuildAllowed = canBuild,\s*buildOverride\s*\) =>\s*/m;
+const loaderMatch = source.match(loaderPattern);
+if (!loaderMatch) {
   throw new Error("QMD llama loader changed; refusing to apply an unreviewed Ampere patch");
 }
-source = source.replace(anchor, addition + anchor);
+const indent = loaderMatch[1];
+const addition = [
+  "// Hermes enables this only on Ampere Altra (Neoverse-N1) hosts.",
+  "// A matching local build is selected even when the service sandbox makes",
+  "// node_modules read-only; installation primes it before the service starts.",
+  "const useAmpereNativeBuild = process.env.QMD_AMPERE_NATIVE_BUILD === \"1\";",
+  "const ampereCmakeOptions = useAmpereNativeBuild ? {",
+  "  GGML_NATIVE: \"ON\",",
+  "  GGML_CPU_KLEIDIAI: \"ON\"",
+  "} : undefined;",
+].map((line) => indent + line).join("\n") + "\n";
+source = source.replace(loaderPattern, addition + loaderMatch[0]);
 
-const optionsAnchor = "          build: buildOverride ?? (sourceBuildAllowed ? \"auto\" : \"never\"),\n";
+const buildOptionsPattern = /^([ \t]*)build:\s*buildOverride\s*\?\?\s*\(sourceBuildAllowed\s*\?\s*\"auto\"\s*:\s*\"never\"\),\s*$/m;
+const buildOptionsMatch = source.match(buildOptionsPattern);
 const optionsAddition = [
-  "          cmakeOptions: ampereCmakeOptions,",
-  "          existingPrebuiltBinaryMustMatchBuildOptions: useAmpereNativeBuild,",
-].join("\n") + "\n";
-if (!source.includes(optionsAnchor)) {
+  "cmakeOptions: ampereCmakeOptions,",
+  "existingPrebuiltBinaryMustMatchBuildOptions: useAmpereNativeBuild,",
+].map((line) => (buildOptionsMatch ? buildOptionsMatch[1] : "") + line).join("\n") + "\n";
+if (!buildOptionsMatch) {
   throw new Error("QMD build options changed; refusing to apply an unreviewed Ampere patch");
 }
-source = source.replace(optionsAnchor, optionsAddition + optionsAnchor);
+source = source.replace(buildOptionsPattern, optionsAddition + buildOptionsMatch[0]);
 
-const cpuFallback = "          return await loadLlama(false, false);";
-if (!source.includes(cpuFallback)) {
+const cpuFallbackPattern = /return await loadLlama\(\s*false,\s*false\s*\);/;
+if (!cpuFallbackPattern.test(source)) {
   throw new Error("QMD CPU fallback changed; refusing to apply an unreviewed Ampere patch");
 }
-source = source.replace(cpuFallback, "          return await loadLlama(false, useAmpereNativeBuild ? canBuild : false);");
+source = source.replace(cpuFallbackPattern, "return await loadLlama(false, useAmpereNativeBuild ? canBuild : false);");
 
 fs.writeFileSync(file, source);
 NODE
