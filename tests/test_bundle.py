@@ -88,6 +88,7 @@ class BundleTests(unittest.TestCase):
         gateway = read("systemd/hermes-gateway.service.in")
         dashboard = read("systemd/hermes-dashboard.service.in")
         self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace", gateway)
+        self.assertIn("Environment=HERMES_BIN=%h/.hermes/hermes-agent/venv/bin/hermes", gateway)
         self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator dashboard", dashboard)
 
     def test_openai_runtime_is_explicitly_auto(self):
@@ -121,12 +122,12 @@ class BundleTests(unittest.TestCase):
                 self.assertIn("HERMES_LANGFUSE_RELEASE=v2026.9.11", env, name)
                 self.assertIn(f"HERMES_LANGFUSE_ENV=production-{name}", env, name)
 
-    def test_qmd_is_read_only_and_limited_to_wiki_maintainer(self):
+    def test_qmd_trust_is_profile_scoped_and_tool_limited(self):
         wiki = read("profiles/wiki-maintainer/config.yaml")
         self.assertIn("mcp_servers:\n  qmd:", wiki)
         self.assertIn('command: "${userHome}/.hermes/qmd-runtime/node_modules/.bin/qmd"', wiki)
         self.assertIn("include: [query, get, multi_get, status]", wiki)
-        self.assertIn("trust: untrusted", wiki)
+        self.assertIn("trust: full", wiki)
         self.assertIn("resources: false", wiki)
         self.assertIn("prompts: false", wiki)
         for name in PROFILE_NAMES - {"wiki-maintainer"}:
@@ -300,6 +301,8 @@ class BundleTests(unittest.TestCase):
         script = read("scripts/install-wiki-triage.sh")
         wiki_config = read("profiles/wiki-maintainer/config.yaml")
         self.assertIn("timezone: Europe/Belgrade", wiki_config)
+        self.assertIn("  cwd: /srv/hermes/wiki", wiki_config)
+        self.assertIn("    timeout: 300", wiki_config)
         self.assertIn("every day at 03:30", script)
         self.assertNotIn("every 1d at 03:30", script)
         self.assertIn("wiki-clipping-triage", script)
@@ -312,6 +315,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("investments", script)
         self.assertIn("software-development", script)
         self.assertIn("WIKI_TRIAGE_TIMEZONE", script)
+        self.assertIn('grep -Fxq "  cwd: $wiki_root"', script)
         self.assertIn("WIKI_TRIAGE_UPDATE_EXISTING", script)
         self.assertIn("Review legacy plain Markdown clippings", script)
         self.assertIn("Do not require a separate", script)

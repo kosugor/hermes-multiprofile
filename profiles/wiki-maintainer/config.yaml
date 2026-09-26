@@ -46,12 +46,12 @@ mcp_servers:
       PATH: "${userHome}/.hermes/node/bin:/usr/local/bin:/usr/bin:/bin"
       QMD_CONFIG_DIR: "${userHome}/.hermes/profiles/wiki-maintainer/qmd"
       QMD_FORCE_CPU: "1"
-    timeout: 120
+    timeout: 300
     connect_timeout: 45
     supports_parallel_tool_calls: false
     idle_timeout_seconds: 300
     max_lifetime_seconds: 1800
-    trust: untrusted
+    trust: full
     tools:
       include: [query, get, multi_get, status]
       resources: false
@@ -59,6 +59,7 @@ mcp_servers:
 
 terminal:
   backend: docker
+  cwd: /srv/hermes/wiki
   timeout: 180
   home_mode: profile
   lifetime_seconds: 600

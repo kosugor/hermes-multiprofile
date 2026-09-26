@@ -11,9 +11,10 @@ profile_config="${HERMES_HOME:-$HOME/.hermes}/profiles/wiki-maintainer/config.ya
 if [[ ! -f $profile_config ]] \
   || ! grep -Fxq "timezone: $timezone" "$profile_config" \
   || ! grep -Fxq '  docker_mount_cwd_to_workspace: true' "$profile_config" \
+  || ! grep -Fxq "  cwd: $wiki_root" "$profile_config" \
   || ! grep -Fxq '  container_persistent: true' "$profile_config" \
   || ! grep -Fxq '  docker_persist_across_processes: false' "$profile_config"; then
-  echo "Wiki Maintainer profile needs the $timezone timezone and host-wiki Docker mount settings: $profile_config" >&2
+  echo "Wiki Maintainer profile needs timezone $timezone, terminal cwd $wiki_root, and host-wiki Docker mount settings: $profile_config" >&2
   exit 1
 fi
 
