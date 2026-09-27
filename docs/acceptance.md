@@ -28,7 +28,7 @@ runtime-gated and may be absent.
 | Reviewer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Wiki Maintainer Kanban worker | file, terminal, memory, the four reviewed read-only `mcp__qmd__*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Web Scraper Kanban worker | web, built-in browser, file, terminal, plus Kanban lifecycle tools |
-| Web Monitor cron worker | web, built-in browser, file |
+| Web Monitor cron worker | web, built-in browser, file, terminal |
 
 Also inspect a dashboard session. The dashboard must not widen the Orchestrator
 profile's allowlist. Save all inventories as deployment evidence.
@@ -115,7 +115,9 @@ Serve a public test page that can be changed safely. Install a paused monitor
 with `scripts/install-monitor.sh`, then:
 
 1. Run it manually once and confirm a baseline with URL, UTC timestamp, and a
-   source-provided content hash (when Firecrawl exposes one).
+   source-provided content hash (when Firecrawl exposes one). Confirm the
+   Docker terminal finds `/workspace/.hermes-monitor-workspace` and the snapshot
+   appears on the host under `/srv/hermes/monitor/monitoring/`.
 2. Run it unchanged and confirm `[SILENT]` produces no Telegram delivery.
 3. Change material content once and confirm exactly one result reaches
    `bot-chat:orchestrator`.

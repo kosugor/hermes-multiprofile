@@ -113,6 +113,16 @@ if grep -Fxq 'timezone: Europe/Belgrade' "$wiki_maintainer_config" \
 else
   fail "Wiki Maintainer triage workspace and timezone settings"
 fi
+web_monitor_config="$hermes_home/profiles/web-monitor/config.yaml"
+if grep -Fxq '  cwd: /srv/hermes/monitor' "$web_monitor_config" \
+  && grep -Fxq '  docker_mount_cwd_to_workspace: true' "$web_monitor_config" \
+  && grep -Fxq '  container_persistent: true' "$web_monitor_config" \
+  && grep -Fxq '  docker_persist_across_processes: false' "$web_monitor_config" \
+  && [[ -w /srv/hermes/monitor/monitoring && -f /srv/hermes/monitor/.hermes-monitor-workspace ]]; then
+  pass "Web Monitor workspace mount source and compatibility settings"
+else
+  fail "Web Monitor workspace mount source and compatibility settings"
+fi
 run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
 run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"
 run_check "Wiki Maintainer QMD runtime is pinned" "$repo_root/scripts/verify-qmd-pin.sh"

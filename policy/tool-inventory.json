@@ -141,8 +141,10 @@
     "browser_vault_unlock",
     "browser_vision",
     "patch",
+    "process_manage",
     "read_file",
     "search_files",
+    "terminal",
     "web_extract",
     "web_search",
     "write_file"

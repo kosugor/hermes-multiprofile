@@ -75,9 +75,14 @@ if [[ $approved_tag == v2026.9.11 && $version_text != *"v2026.9.11"* && $version
   exit 1
 fi
 
-for path in /srv/hermes/projects /srv/hermes/wiki /srv/hermes/artifacts; do
+install -d -m 0750 /srv/hermes/monitor /srv/hermes/monitor/monitoring
+for path in /srv/hermes/projects /srv/hermes/wiki /srv/hermes/monitor /srv/hermes/artifacts; do
   [[ -d $path && -w $path ]] || { echo "$path must exist and be writable by $(id -un)." >&2; exit 1; }
 done
+
+if [[ ! -e /srv/hermes/monitor/.hermes-monitor-workspace ]]; then
+  printf 'Hermes Web Monitor workspace\n' > /srv/hermes/monitor/.hermes-monitor-workspace
+fi
 
 if [[ ! -d /srv/hermes/wiki/.git ]]; then
   git -C /srv/hermes/wiki init

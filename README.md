@@ -94,7 +94,8 @@ bash ./scripts/bootstrap-user.sh
 
 The bootstrap is idempotent. It installs the exact Hermes release into the
 supported `~/.hermes/hermes-agent` layout, creates `/srv/hermes/projects`,
-`/srv/hermes/wiki`, and `/srv/hermes/artifacts`; creates the seven named Hermes
+`/srv/hermes/wiki`, `/srv/hermes/monitor`, and `/srv/hermes/artifacts`; creates
+the seven named Hermes
 profiles; backs up an existing profile configuration and skill pack before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
 installs user systemd units. Bundled skills are opted out for every profile,
@@ -219,9 +220,15 @@ hermes -p web-monitor cron run vendor-release-notes
 hermes -p web-monitor cron resume vendor-release-notes
 ```
 
-The monitor records snapshots below `/srv/hermes/wiki/monitoring/`, suppresses
+The monitor uses `/srv/hermes/monitor` as its host workspace and mounts it at
+`/workspace` in its networkless Docker terminal. The installer requires the
+bootstrap-created mount canary. Snapshots land under
+`/srv/hermes/monitor/monitoring/`. The monitor suppresses
 unchanged results with `[SILENT]`, and sends changes to `bot-chat:orchestrator` for
 orchestrator triage.
+Existing cron jobs keep their original workdir and snapshots. Recreate them
+after transferring their snapshots to `/srv/hermes/monitor/monitoring/`; the
+installer does not alter existing jobs.
 
 ## URL clipping and wiki triage
 

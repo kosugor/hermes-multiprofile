@@ -30,15 +30,15 @@ cleanup() {
 trap cleanup EXIT
 
 [[ -d $hermes_home ]] || { echo "Hermes home does not exist: $hermes_home" >&2; exit 1; }
-[[ -d /srv/hermes/projects && -d /srv/hermes/wiki ]] || {
-  echo "/srv/hermes/projects and /srv/hermes/wiki must exist." >&2
+[[ -d /srv/hermes/projects && -d /srv/hermes/wiki && -d /srv/hermes/monitor ]] || {
+  echo "/srv/hermes/projects, /srv/hermes/wiki, and /srv/hermes/monitor must exist." >&2
   exit 1
 }
 mkdir -p "$backup_root"
 chmod 0700 "$backup_root"
 
 source_kib=0
-for source_path in "$hermes_home" /srv/hermes/projects /srv/hermes/wiki /srv/hermes/artifacts; do
+for source_path in "$hermes_home" /srv/hermes/projects /srv/hermes/wiki /srv/hermes/monitor /srv/hermes/artifacts; do
   source_kib=$((source_kib + $(du -sk -- "$source_path" | awk '{print $1}')))
 done
 required_kib=$((source_kib * 2))
@@ -62,6 +62,7 @@ mkdir -p "$stage/home" "$stage/srv/hermes" "$stage/deployment/infra"
 cp -a -- "$hermes_home" "$stage/home/.hermes"
 cp -a -- /srv/hermes/projects "$stage/srv/hermes/projects"
 cp -a -- /srv/hermes/wiki "$stage/srv/hermes/wiki"
+cp -a -- /srv/hermes/monitor "$stage/srv/hermes/monitor"
 cp -a -- /srv/hermes/artifacts "$stage/srv/hermes/artifacts"
 
 # Hermes itself, its managed Node runtime, QMD runtime, and browser link are
@@ -80,7 +81,7 @@ done
   printf 'created_utc=%s\n' "$timestamp"
   printf 'hostname=%s\n' "$(hostname)"
   printf 'hermes_version=%s\n' "$(hermes --version 2>&1 || printf unknown)"
-  printf 'scope=profile state,/srv/hermes/projects,/srv/hermes/wiki,/srv/hermes/artifacts,infra runtime state\n'
+  printf 'scope=profile state,/srv/hermes/projects,/srv/hermes/wiki,/srv/hermes/monitor,/srv/hermes/artifacts,infra runtime state\n'
   printf 'excluded_rebuildable=hermes-agent,node,qmd-runtime,bin\n'
 } > "$stage/MANIFEST.txt"
 

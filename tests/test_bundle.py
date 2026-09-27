@@ -29,7 +29,7 @@ EXPECTED_TOOLSETS = {
     "reviewer": {"file", "terminal", "web"},
     "wiki-maintainer": {"file", "terminal", "memory"},
     "web-scraper": {"web", "browser", "file", "terminal"},
-    "web-monitor": {"web", "browser", "file"},
+    "web-monitor": {"web", "browser", "file", "terminal"},
 }
 
 
@@ -210,9 +210,13 @@ class BundleTests(unittest.TestCase):
             config = read(f"profiles/{name}/config.yaml")
             for line in required:
                 self.assertIn(line, config, f"{name}: {line}")
-            expected_persistence = "true" if name in {"web-scraper", "wiki-maintainer"} else "false"
+            expected_persistence = "true" if name in {"web-scraper", "wiki-maintainer", "web-monitor"} else "false"
             self.assertIn(f"container_persistent: {expected_persistence}", config, name)
-            self.assertNotRegex(config, r"(?m)^\s+cwd:")
+            if name in {"wiki-maintainer", "web-monitor"}:
+                expected_cwd = "/srv/hermes/wiki" if name == "wiki-maintainer" else "/srv/hermes/monitor"
+                self.assertIn(f"  cwd: {expected_cwd}", config, name)
+            else:
+                self.assertNotRegex(config, r"(?m)^\s+cwd:")
             self.assertNotIn("docker.sock", config)
             self.assertNotIn("docker_volumes:", config)
 
@@ -296,6 +300,13 @@ class BundleTests(unittest.TestCase):
         self.assertNotIn(" cron resume ", script)
         self.assertIn("MONITOR_SCHEMA", script)
         self.assertIn("Set MONITOR_SELECTOR, MONITOR_SCHEMA, or both.", script)
+        self.assertIn('monitor_root=/srv/hermes/monitor', script)
+        self.assertIn('--workdir "$monitor_root"', script)
+        self.assertIn('/workspace/.hermes-monitor-workspace', script)
+        self.assertNotIn('--continuity', script)
+        self.assertIn('/srv/hermes/monitor', read("scripts/install-host.sh"))
+        self.assertIn('/srv/hermes/monitor/.hermes-monitor-workspace', read("scripts/bootstrap-user.sh"))
+        self.assertIn('/srv/hermes/monitor "$stage/srv/hermes/monitor"', read("scripts/backup.sh"))
 
     def test_wiki_triage_installer_is_paused_and_scoped(self):
         script = read("scripts/install-wiki-triage.sh")
@@ -578,7 +589,7 @@ class BundleTests(unittest.TestCase):
             else:
                 self.assertFalse({tool for tool in tools if tool.startswith("browser_")}, name)
         self.assertIn("todo_list", inventory["orchestrator"])
-        for name in WORKERS - {"web-monitor"}:
+        for name in WORKERS:
             self.assertIn("process_manage", inventory[name], name)
         self.assertNotIn("process", {tool for tools in inventory.values() for tool in tools})
         self.assertNotIn("todo", {tool for tools in inventory.values() for tool in tools})
