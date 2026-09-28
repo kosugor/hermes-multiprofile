@@ -309,6 +309,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn('/workspace/.hermes-monitor-workspace', script)
         self.assertNotIn('--continuity', script)
         self.assertIn('/srv/hermes/monitor', read("scripts/install-host.sh"))
+        self.assertIn('/srv/hermes/monitor/monitoring', read("scripts/install-host.sh"))
         self.assertIn('/srv/hermes/monitor/.hermes-monitor-workspace', read("scripts/bootstrap-user.sh"))
         self.assertIn('/srv/hermes/monitor "$stage/srv/hermes/monitor"', read("scripts/backup.sh"))
 

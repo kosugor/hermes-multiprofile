@@ -130,7 +130,8 @@ runuser -u "$target_user" -- env \
   dockerd-rootless-setuptool.sh install --force
 
 install -d -m 0750 -o "$target_user" -g "$target_user" \
-  /srv/hermes /srv/hermes/projects /srv/hermes/wiki /srv/hermes/monitor /srv/hermes/artifacts
+  /srv/hermes /srv/hermes/projects /srv/hermes/wiki /srv/hermes/monitor \
+  /srv/hermes/monitor/monitoring /srv/hermes/artifacts
 
 cat <<EOF
 Host preparation complete.

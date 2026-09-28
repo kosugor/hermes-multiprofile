@@ -94,7 +94,8 @@ bash ./scripts/bootstrap-user.sh
 
 The bootstrap is idempotent. It installs the exact Hermes release into the
 supported `~/.hermes/hermes-agent` layout, creates `/srv/hermes/projects`,
-`/srv/hermes/wiki`, `/srv/hermes/monitor`, and `/srv/hermes/artifacts`; creates
+`/srv/hermes/wiki`, `/srv/hermes/monitor` and its `monitoring` directory, and
+`/srv/hermes/artifacts`; creates
 the seven named Hermes
 profiles; backs up an existing profile configuration and skill pack before replacing it; builds the
 sandbox image; pulls every service image at its committed ARM64 digest; and
