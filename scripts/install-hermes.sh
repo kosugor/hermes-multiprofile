@@ -19,6 +19,25 @@ for command_name in curl git sha256sum; do
   command -v "$command_name" >/dev/null 2>&1 || { echo "$command_name is required." >&2; exit 1; }
 done
 
+sync_managed_environment() {
+  local venv_python venv_dir
+  if [[ -x $checkout/venv/bin/python ]]; then
+    venv_python="$checkout/venv/bin/python"
+  elif [[ -x $checkout/.venv/bin/python ]]; then
+    venv_python="$checkout/.venv/bin/python"
+  else
+    echo "Managed Hermes venv not found below $checkout." >&2
+    return 1
+  fi
+  venv_dir=$(dirname -- "$(dirname -- "$venv_python")")
+  (
+    cd "$checkout"
+    unset UV_NO_CONFIG UV_CONFIG_FILE
+    UV_PROJECT_ENVIRONMENT="$venv_dir" UV_PYTHON="$venv_python" \
+      uv sync --extra all --locked
+  )
+}
+
 if [[ -d $checkout/.git ]] && [[ -n $(git -C "$checkout" status --porcelain --untracked-files=all) ]]; then
   echo "Refusing to install over a dirty Hermes checkout: $checkout" >&2
   exit 1
@@ -26,6 +45,8 @@ fi
 
 if [[ -d $checkout/.git ]] && APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh" >/dev/null 2>&1; then
   echo "Hermes is already installed and pinned to $tag."
+  command -v uv >/dev/null 2>&1 || { echo "uv is required to repair the managed Hermes environment." >&2; exit 1; }
+  sync_managed_environment
   bash "$repo_root/scripts/install-browser.sh"
   exit 0
 fi
@@ -59,6 +80,8 @@ git -C "$checkout" fetch --depth=1 origin "refs/tags/$tag:refs/tags/$tag"
   echo "Hermes installer did not leave the checkout at $release_commit." >&2
   exit 1
 }
+command -v uv >/dev/null 2>&1 || { echo "uv is required by the managed Hermes install." >&2; exit 1; }
+sync_managed_environment
 APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh"
 bash "$repo_root/scripts/install-browser.sh"
 echo "Installed Hermes $tag / package 0.21.2 at $release_commit."
