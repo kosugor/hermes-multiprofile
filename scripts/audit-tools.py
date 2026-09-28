@@ -38,7 +38,6 @@ FORBIDDEN = {
     "browser_exec",
     "computer_use",
     "send_message",
-    "cronjob",
 }
 PLUGIN_TOOLS = {
     "hermes-lcm": {
@@ -81,8 +80,9 @@ EXPECTED_PLUGINS = {
 }
 MEMORY_PROFILES = {"orchestrator", "researcher", "coder", "wiki-maintainer"}
 REQUIRED_DISABLED_TOOLSETS = {
-    "code_execution", "delegation", "messaging", "cronjob", "skills", "skills_hub",
+    "code_execution", "delegation", "messaging", "skills", "skills_hub",
 }
+AGENT_SCHEDULING_PROFILE = "web-monitor"
 EXPECTED_SKILLS = {
     "orchestrator": set(),
     "researcher": {"deep-web-research", "verify-research-claims"},
@@ -184,6 +184,20 @@ def main() -> int:
                 f"{profile}: required disabled toolsets missing="
                 f"{sorted(REQUIRED_DISABLED_TOOLSETS - disabled)}"
             )
+        scheduling_enabled = profile == AGENT_SCHEDULING_PROFILE
+        if ("cronjob" in disabled) == scheduling_enabled:
+            failures.append(
+                f"{profile}: cronjob must be {'enabled' if scheduling_enabled else 'disabled'}"
+            )
+        allow_agent_scheduling = (config.get("cron") or {}).get("allow_agent_scheduling")
+        if scheduling_enabled and allow_agent_scheduling is not True:
+            failures.append(
+                f"{profile}: cron.allow_agent_scheduling must be true"
+            )
+        if not scheduling_enabled and allow_agent_scheduling is True:
+            failures.append(
+                f"{profile}: cron.allow_agent_scheduling must remain disabled"
+            )
         skills_root = profiles_root / profile / "skills"
         actual_skills = {
             path.name for path in skills_root.iterdir()
@@ -226,6 +240,10 @@ def main() -> int:
                     failures.append(f"{profile}:{platform}: kanban and clarify are required")
             elif "kanban" in declared or "clarify" in declared:
                 failures.append(f"{profile}:{platform}: kanban/clarify must not be standing toolsets")
+            if ("cronjob" in declared) != scheduling_enabled:
+                failures.append(
+                    f"{profile}:{platform}: cronjob allowlist must be {scheduling_enabled}"
+                )
             resolved: set[str] = set()
             for toolset_name in declared:
                 resolved.update(resolve_toolset(str(toolset_name)))

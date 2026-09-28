@@ -28,7 +28,7 @@ runtime-gated and may be absent.
 | Reviewer Kanban worker | exact list in `policy/kanban-worker-inventory.json` |
 | Wiki Maintainer Kanban worker | file, terminal, memory, the four reviewed read-only `mcp__qmd__*` tools, plus Kanban lifecycle tools; exact list in `policy/kanban-worker-inventory.json` |
 | Web Scraper Kanban worker | web, built-in browser, file, terminal, plus Kanban lifecycle tools |
-| Web Monitor cron worker | web, built-in browser, file, terminal |
+| Web Monitor cron worker | web, built-in browser, file, terminal, cronjob |
 
 Also inspect a dashboard session. The dashboard must not widen the Orchestrator
 profile's allowlist. Save all inventories as deployment evidence.
@@ -57,9 +57,11 @@ The audit also enforces the profile capability policy:
   skills are installed separately and are not permission-granting toolsets.
 - `kanban` is standing only for Orchestrator and is dispatcher-injected for
   workers. `clarify` is Orchestrator-only.
-- `code_execution`, `delegation`, `messaging`, and `cronjob` are disabled for
-  every profile. Telegram is a gateway adapter, not an agent-callable messaging
-  tool; Web Monitor's host cron job is operator-managed.
+- `code_execution`, `delegation`, and `messaging` are disabled for every
+  profile. `cronjob` is enabled only for Web Monitor, with
+  `cron.allow_agent_scheduling: true`; its instructions limit job changes to
+  explicit user requests and keep new or materially changed jobs paused pending
+  approval. Telegram is a gateway adapter, not an agent-callable messaging tool.
 - Coder must select `context.engine: lcm`; every other profile must explicitly
   select the built-in `compressor` engine.
 - `observability/langfuse` is enabled for Orchestrator, Researcher, Coder,

@@ -229,6 +229,9 @@ orchestrator triage.
 Existing cron jobs keep their original workdir and snapshots. Recreate them
 after transferring their snapshots to `/srv/hermes/monitor/monitoring/`; the
 installer does not alter existing jobs.
+Web Monitor also exposes the `cronjob` control tool. Ask the profile directly
+to inspect or manage its monitor schedules; it keeps new and materially changed
+jobs paused until you approve their target and cadence.
 
 ## URL clipping and wiki triage
 

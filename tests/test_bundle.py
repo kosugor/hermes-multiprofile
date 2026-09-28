@@ -29,7 +29,7 @@ EXPECTED_TOOLSETS = {
     "reviewer": {"file", "terminal", "web"},
     "wiki-maintainer": {"file", "terminal", "memory"},
     "web-scraper": {"web", "browser", "file", "terminal"},
-    "web-monitor": {"web", "browser", "file", "terminal"},
+    "web-monitor": {"web", "browser", "file", "terminal", "cronjob"},
 }
 
 
@@ -139,7 +139,6 @@ class BundleTests(unittest.TestCase):
             "delegation",
             "computer_use",
             "messaging",
-            "cronjob",
         }
         for name in PROFILE_NAMES:
             config = read(f"profiles/{name}/config.yaml")
@@ -147,6 +146,11 @@ class BundleTests(unittest.TestCase):
             self.assertIsNotNone(disabled_match, name)
             disabled_text = " ".join(group or "" for group in disabled_match.groups())
             self.assertTrue(forbidden <= set(re.findall(r"[a-z_]+", disabled_text)), name)
+            if name == "web-monitor":
+                self.assertNotIn("cronjob", set(re.findall(r"[a-z_]+", disabled_text)))
+                self.assertIn("allow_agent_scheduling: true", config)
+            else:
+                self.assertIn("cronjob", set(re.findall(r"[a-z_]+", disabled_text)), name)
 
     def test_browser_is_hardened_and_limited_to_approved_profiles(self):
         browser_profiles = {"researcher", "web-scraper", "web-monitor"}
@@ -580,10 +584,13 @@ class BundleTests(unittest.TestCase):
             "browser_exec",
             "computer_use",
             "send_message",
-            "cronjob",
         }
         for name, tools in inventory.items():
             self.assertFalse(forbidden & set(tools), name)
+            if name == "web-monitor":
+                self.assertIn("cronjob", tools)
+            else:
+                self.assertNotIn("cronjob", tools, name)
             if name in {"researcher", "web-scraper", "web-monitor"}:
                 self.assertIn("browser_navigate", tools)
             else:

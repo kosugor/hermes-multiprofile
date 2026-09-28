@@ -140,6 +140,7 @@
     "browser_vault_save_login",
     "browser_vault_unlock",
     "browser_vision",
+    "cronjob",
     "patch",
     "process_manage",
     "read_file",
