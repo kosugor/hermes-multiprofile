@@ -44,7 +44,7 @@ terminal:
   docker_extra_args: ["--pids-limit", "256"]
   container_cpu: 1
   container_memory: 1536
-  container_persistent: false
+  container_persistent: true
   docker_persist_across_processes: false
   persistent_shell: false
 
