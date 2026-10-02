@@ -30,35 +30,53 @@ the mount canary: an empty, container-local `/workspace` is not the wiki and
 must never be accepted. Do not inspect `/srv/hermes/wiki` or block merely
 because that host path is absent inside the sandbox.
 
+Before reading/searching or writing any wiki file, run
+`python3 /workspace/.hermes-maintenance/wiki-writer-lock.py acquire --owner
+kanban:<task-id>:web-scraper`. Retain the returned token through artifact
+read-back and capture validation, then run
+`python3 /workspace/.hermes-maintenance/wiki-writer-lock.py release --token
+<token>` with that exact token. This same lock protects Wiki Maintainer Kanban
+and cron edits. If acquisition fails, block without wiki work. The helper is
+installed by bootstrap and `install-wiki-triage.sh`.
+
 1. Normalize the URL and remove obvious tracking parameters when safe.
-2. Call `web_extract` using Firecrawl.
+2. Call `web_extract` using Firecrawl. Preserve the supplied URL separately
+   from any canonical URL returned by the page. Record publication/update date
+   only when the page states one; otherwise use `unknown`.
 3. Evaluate extraction quality:
    - title present;
    - main body present;
    - headings/links/code preserved reasonably;
    - no dominant navigation or boilerplate.
 4. If extraction is incomplete, JavaScript-dependent, blocked, or requires
-   interaction, use the enabled browser to reach the content and capture the
-   useful body.
+   interaction, use the built-in local browser tools and managed Chromium.
+   `browser.backend: "off"` opts out of Browser Use CLI and does not disable
+   these built-in tools. If neither path captures the substantive body, retain
+   the observed evidence and classify it as `shell` or `failed`.
 5. Produce clean Markdown:
    - one H1 title;
    - preserve meaningful heading hierarchy;
    - preserve code blocks, tables, lists, quotations, and useful links;
    - remove menus, related-post grids, ads, cookie notices, repetitive footers;
-   - avoid rewriting the author's wording except for formatting cleanup.
+   - avoid rewriting the author's wording except for formatting cleanup. Do not
+     replace the clipping with an AI-generated summary.
 6. Add provenance frontmatter. Quote values when needed so the frontmatter
    remains valid YAML:
 
    ---
    title: "<page title>"
-   source: "<canonical URL>"
+   supplied_url: "<URL supplied in the task>"
+   canonical_url: "<canonical URL, or supplied URL if unchanged>"
+   source: "<same canonical URL; kept for legacy triage compatibility>"
+   published_at: "<date or unknown>"
    clipped: "<YYYY-MM-DD>"
    retrieved_at: "<UTC ISO-8601 timestamp ending in Z>"
-   capture_status: "complete|partial"
+   capture_status: "complete|partial|shell|failed"
    capture_method: "firecrawl|browser|firecrawl+browser"
+   capture_limitations: "<none, or concise list of omissions/restrictions>"
    provider: "<provider used for this run>"
    model: "<model used for this run>"
-   content_sha256: "<SHA-256 of the exact Markdown body after frontmatter>"
+   content_sha256: "<SHA-256 of the exact saved body bytes after frontmatter>"
    ---
 
 7. Choose a filesystem-safe filename in the form
@@ -93,11 +111,11 @@ Only condense if the user explicitly asks for a summary.
 
 Re-read the saved Markdown and confirm:
 - frontmatter is valid;
-- source URL is present;
+- supplied and canonical URLs are present;
 - retrieval timestamp, capture metadata, provider/model, and body hash are
   present and the body hash matches;
-- `capture_status: partial` is explicitly reported and is not presented as a
-  complete source;
+- status is accurate: `complete`, `partial`, `shell`, or `failed`; shell and
+  failed captures are never presented as complete sources;
 - no obvious site chrome remains;
 - no section was accidentally duplicated;
 - code fences and Markdown structure are balanced;

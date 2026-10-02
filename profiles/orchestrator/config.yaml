@@ -66,6 +66,7 @@ kanban:
   dispatch_in_gateway: true
   dispatch_interval_seconds: 60
   review_dispatch: true
+  # Matches SOUL.md: Orchestrator owns the explicit, linked graph.
   auto_decompose: false
   orchestrator_profile: orchestrator
   default_assignee: orchestrator

@@ -12,4 +12,15 @@ Check that URLs resolve to the claimed document, the cited version applies, and 
 
 Inspect code snippets for valid structure and for installation/authentication prerequisites. Say whether they were executed, statically inspected or simply proposed. A parsable config does not prove the installed application supports it.
 
-Return verified claims, inferred claims, conflicting evidence and gaps. Preserve useful negative results without treating inaccessible pages as proof of absence. When a decisive claim remains unresolved, qualify the conclusion and specify the narrow follow-up needed.
+Return a claim ledger with columns for claim, source/passage, publication or
+update date, retrieval date, applicable conditions/version, evidence status,
+and affected canonical page. Use `verified`, `author-claim`, `inference`,
+`unverified`, or `conflict`. Then synthesize what changed, where it applies,
+and how sources differ. Preserve useful negative results without treating
+inaccessible pages as proof of absence. When a decisive claim remains
+unresolved, qualify the conclusion and specify the narrow follow-up needed.
+
+For material model, pricing, hardware, and security claims, trace to primary
+documentation, original papers/advisories, or executed tests. Keep blog
+experience attributed. State prerequisites and whether any proposed procedure
+was tested, statically inspected, or not checked.

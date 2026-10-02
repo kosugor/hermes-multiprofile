@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 name=${WIKI_TRIAGE_NAME:-wiki-clipping-triage}
 schedule=${WIKI_TRIAGE_SCHEDULE:-every day at 03:30}
 wiki_root=${HERMES_WIKI_ROOT:-/srv/hermes/wiki}
@@ -26,6 +27,13 @@ fi
   echo "Wiki root must be a Git repository for automatic triage commits: $wiki_root" >&2
   exit 1
 }
+install -d -m 0750 "$wiki_root/.hermes-maintenance"
+install -m 0644 "$repo_root/scripts/wiki-writer-lock.py" \
+  "$wiki_root/.hermes-maintenance/wiki-writer-lock.py"
+wiki_git_excludes="$wiki_root/.git/info/exclude"
+touch "$wiki_git_excludes"
+grep -Fxq '/.hermes-maintenance/' "$wiki_git_excludes" ||
+  printf '%s\n' '/.hermes-maintenance/' >> "$wiki_git_excludes"
 for wiki in investments devops software-development ai; do
   [[ -d "$wiki_root/$wiki" ]] || {
     echo "Missing configured wiki directory: $wiki_root/$wiki" >&2
@@ -48,6 +56,10 @@ Run the scheduled wiki clipping triage in timezone $timezone.
 
 First verify the scheduled-wiki-maintenance host-wiki mount canaries at
 /workspace. If any fail, stop with an explicit error; do not return [SILENT].
+Before QMD or file access, acquire the shared lock with
+python3 /workspace/.hermes-maintenance/wiki-writer-lock.py acquire --owner
+cron:$name. Retain the returned token through validation/commit, then release
+with that token. Stop before wiki work if another owner holds it.
 
 Scope: process at most 20 files from Inbox/Clippings that existed when this
 run began. Classify each complete clipping into exactly one of these primary
@@ -59,8 +71,12 @@ file must have one primary owner. Review legacy plain Markdown clippings in
 this same triage run: extract only explicit title/source/capture-time details,
 add honest legacy review frontmatter to the archive copy, preserve the body
 exactly, and carry uncertainty into curated pages. Do not require a separate
-migration step. Skip current capture_status: partial files and malformed or
-unverifiable files; report each reason without moving the source.
+migration step. Skip valid partial files as deferred. Park valid shell/failed
+captures in evidence-only/failed-sources with original bytes and a terminal
+failure disposition; do not retry them on ordinary daily runs. Treat malformed
+YAML, wrong-root paths, or stale body hashes as corruption and report without
+moving the source. Update canonical pages according to SCHEMA.md and update
+topic hubs.
 
 Use QMD for semantic page discovery and ordinary file search for exact paths.
 Run all frontmatter, link, duplicate, and clipping audits. Use the exact-path

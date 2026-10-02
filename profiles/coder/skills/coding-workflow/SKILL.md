@@ -41,6 +41,12 @@ metadata:
 
 ## Verification
 
+For artifact/capture gates, verify parsed frontmatter, recompute a hash from the
+actual saved body bytes, enforce the assigned workspace root, and distinguish
+corruption from valid deferred/no-change/blocked-source dispositions. Exercise
+invalid YAML, stale hash after a body change, valid display aliases, wrong-root
+paths, and expected deferred inputs when changing this contract.
+
 A completion handoff must state:
 - files changed;
 - behavior changed;

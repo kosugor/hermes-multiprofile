@@ -12,7 +12,10 @@ from pathlib import Path
 WIKILINK_RE = re.compile(r"(?P<embed>!)?\[\[(?P<body>[^\[\]]+)\]\]")
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*#*\s*$")
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.S)
-IGNORED_DIRS = {".git", ".obsidian", ".trash", ".hermes-backups", ".hermes-maintenance"}
+IGNORED_DIRS = {
+    ".git", ".obsidian", ".trash", ".hermes-backups", ".hermes-maintenance",
+    "evidence-only",
+}
 
 
 @dataclass
@@ -52,6 +55,37 @@ def note_title(path: Path) -> str | None:
     return None
 
 
+def note_aliases(path: Path) -> set[str]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    match = FRONTMATTER_RE.match(text)
+    if not match:
+        return set()
+    lines = match.group(1).splitlines()
+    aliases: set[str] = set()
+    collecting_list = False
+    for line in lines:
+        if not collecting_list and line.startswith("aliases:"):
+            value = line.split(":", 1)[1].strip()
+            if not value:
+                collecting_list = True
+                continue
+            if value.startswith("[") and value.endswith("]"):
+                values = value[1:-1].split(",")
+            else:
+                values = [value]
+            aliases.update(item.strip().strip("\"'") for item in values if item.strip())
+            continue
+        if collecting_list:
+            if re.match(r"^\s+-\s+", line):
+                value = re.sub(r"^\s+-\s+", "", line).strip().strip("\"'")
+                if value:
+                    aliases.add(value)
+                continue
+            if line and not line[0].isspace():
+                collecting_list = False
+    return aliases
+
+
 def heading_names(path: Path) -> set[str]:
     return {
         match.group(1).strip().casefold()
@@ -80,11 +114,13 @@ def validate(root: Path) -> list[Problem]:
     paths = all_files(root)
     by_note: dict[str, Path] = {}
     titles: dict[Path, str | None] = {}
+    aliases: dict[Path, set[str]] = {}
     for path in notes:
         relative = path.relative_to(root).as_posix()
         by_note[relative.casefold()] = path
         by_note[relative.removesuffix(".md").casefold()] = path
         titles[path] = note_title(path)
+        aliases[path] = note_aliases(path)
 
     problems: list[Problem] = []
     for source in notes:
@@ -125,8 +161,8 @@ def validate(root: Path) -> list[Problem]:
             title = titles[target_file]
             if title is None:
                 problems.append(Problem(relative_source, line, raw, "target note has no YAML title"))
-            elif alias != title:
-                problems.append(Problem(relative_source, line, raw, f"alias must equal target title {title!r}"))
+            elif alias != title and alias not in aliases[target_file]:
+                problems.append(Problem(relative_source, line, raw, f"alias must equal target title {title!r} or a declared note alias"))
             if fragment and not fragment.startswith("^") and fragment.casefold() not in heading_names(target_file):
                 problems.append(Problem(relative_source, line, raw, f"heading not found: #{fragment}"))
     return problems

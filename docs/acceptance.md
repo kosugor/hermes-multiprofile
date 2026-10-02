@@ -70,9 +70,12 @@ The audit also enforces the profile capability policy:
   SDK, HTTPS endpoint, profile-scoped environment label, and
   `HERMES_LANGFUSE_CAPTURE=metadata` for enabled profiles.
 
-For Wiki Maintainer, call `mcp__qmd__status` and confirm the only collection is
-`wiki` at `/srv/hermes/wiki`. Search for a known canonical page with
-`mcp__qmd__query`, retrieve it with `mcp__qmd__get`, and confirm `/tools list`
+For Wiki Maintainer, call `mcp__qmd__status` and confirm `wiki` at
+`/srv/hermes/wiki` is included by default and `wiki-evidence` at the same root
+is excluded by default. Search for a known canonical page with
+`mcp__qmd__query`, retrieve it with `mcp__qmd__get`, then explicitly select
+`wiki-evidence` and confirm a known clipping can be retrieved only on that
+opt-in search. Confirm `/tools list`
 contains no QMD collection-management or write tools. Verify
 `hermes-qmd-index.timer` and `hermes-qmd-embed.timer` are active and their most
 recent service runs succeeded.
@@ -98,6 +101,36 @@ recent service runs succeeded.
    criterion and a required Reviewer gate.
 3. In the first review, intentionally leave one criterion unmet. Confirm the
    Reviewer returns the same card to Coder with a concrete change request.
+4. Confirm the Reviewer worker can open and read the exact staged artifact in
+   its own Docker workspace and report its path plus commit/hash. If this read
+   fails, the review must stay blocked with `review-access-blocked`; do not
+   infer access from the attachment list or product documentation. Check the
+   card names the original implementer and correction returns to that same
+   implementer on the same card.
+5. Confirm Coder corrects the artifact on that card, the Reviewer reads the new
+   exact revision, and one approval completes the cycle without a duplicate
+   implementation graph.
+
+## Capture quality gate
+
+Run `python3 -m unittest discover -s tests -v`. Confirm invalid YAML,
+changed body/stale hash, wrong workspace root, and malformed provenance return
+corruption; a valid display alias passes; and a valid partial capture returns
+`outcome=deferred` with exit status zero. Confirm `complete` captures hash the
+exact saved bytes after frontmatter. A `shell` or `failed` page is never
+accepted as a complete source.
+
+## Wiki pilot and writer lock
+
+Run the Wiki Maintainer pilot on `local-llm-capacity-planning`,
+`tailscale-remote-local-model-access`, and
+`model-api-pricing-and-capability-claims`. Verify each page and its topic hub
+against the bundled `SCHEMA.md`, then run its golden queries and confirm default
+search returns canonical pages while evidence appears only when
+`wiki-evidence` is explicitly requested. Attempt a concurrent cron and Kanban
+edit and verify exactly one lock-helper `acquire` succeeds; the other exits
+before QMD or file edits. Confirm a paused monitor remains
+paused after a manual run.
 4. Let Coder correct it and commit locally. Confirm the second review approves.
 5. In both worker transcripts, confirm the worktree appears at `/workspace` and
    that no profile-level `terminal.cwd` overrides it.

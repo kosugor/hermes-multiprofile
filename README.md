@@ -21,6 +21,14 @@ The Orchestrator profile owns one multiplexed gateway, the Kanban dispatcher, an
 the only Telegram credential. The other six profiles are workers. Kanban concurrency
 starts at one because the target machine has two CPU cores.
 
+Orchestrator keeps task decomposition manual (`auto_decompose: false`) and
+builds one linked graph. Wiki cards must state the question the page answers.
+Review returns to the original implementer on the same card and names an exact
+artifact revision; hard-blocked work stays blocked until a prerequisite change
+is evidenced. Web Scraper clipping, Kanban wiki writers, and cron share the
+exclusive `/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock`, managed by a
+token-checked helper installed during bootstrap.
+
 The pinned Hermes `v2026.9.11` predates the upstream fix that makes a
 `platform_toolsets.telegram` Kanban grant pass the Kanban registry gate. The
 Orchestrator therefore also carries the narrow legacy `toolsets: [kanban]`
@@ -43,7 +51,10 @@ Maintainer and Web Scraper (web-clipper) intentionally have Langfuse disabled.
 Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
 `/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
 checksum pinned. It runs locally in stdio mode and exposes only query,
-retrieval, and status tools. A low-priority user
+retrieval, and status tools. Default QMD queries search canonical pages; raw
+clippings and failed-source evidence are isolated in an explicitly selected
+`wiki-evidence` collection. The Wiki Maintainer skill pack carries `SCHEMA.md`
+and a three-page pilot checklist. A low-priority user
 timer refreshes its lexical index every 15 minutes at low priority. A separate
 overnight timer refreshes embeddings and the semantic index at half a CPU. The
 rebuildable index and approximately 2 GB of on-demand local models remain under

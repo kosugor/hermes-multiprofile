@@ -56,6 +56,7 @@
     "browser_scroll", "browser_snapshot", "browser_type", "browser_vault_enter_code",
     "browser_vault_fill", "browser_vault_list", "browser_vault_save_login",
     "browser_vault_unlock", "browser_vision",
+    "cronjob",
     "kanban_attach", "kanban_attach_url", "kanban_attachments", "kanban_block",
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",

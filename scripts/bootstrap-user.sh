@@ -89,6 +89,13 @@ if [[ ! -d /srv/hermes/wiki/.git ]]; then
   git -C /srv/hermes/wiki config user.name "Hermes Wiki Maintainer"
   git -C /srv/hermes/wiki config user.email "hermes-wiki@localhost"
 fi
+install -d -m 0750 /srv/hermes/wiki/.hermes-maintenance
+install -m 0644 "$repo_root/scripts/wiki-writer-lock.py" \
+  /srv/hermes/wiki/.hermes-maintenance/wiki-writer-lock.py
+wiki_git_excludes=/srv/hermes/wiki/.git/info/exclude
+touch "$wiki_git_excludes"
+grep -Fxq '/.hermes-maintenance/' "$wiki_git_excludes" ||
+  printf '%s\n' '/.hermes-maintenance/' >> "$wiki_git_excludes"
 
 mkdir -p "$hermes_home"
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)

@@ -38,6 +38,15 @@ inspectable handoff to the independent Reviewer.
 
 ## Verify the result
 
+- Use the bundle's capture/vault validators as one quality contract: malformed
+  frontmatter, stale body hashes, workspace-root escapes, and invalid display
+  aliases are corruption. A valid deferred input (partial/shell/failed capture)
+  is a successful classification, not corruption or a retry signal. State which
+  outcome was validated; do not call a regex-only check a full validation.
+- For validation changes, cover invalid YAML, changed-body/stale-hash,
+  valid display alias, wrong root, and an expected deferred input. Keep the
+  checks for configuration syntax and semantic behavior explicit.
+
 - Add or update meaningful tests when they help prove the requested behavior; for
   a defect, prefer a regression test that exercises the real failure.
 - Run focused tests first, followed by proportionate builds, linters, type checks,
@@ -56,6 +65,10 @@ inspectable handoff to the independent Reviewer.
   action. Be concise and precise; prefer working evidence over speculation.
 - Finish with the Kanban review-handoff operation for the same card, including the
   summary, validation evidence, commit identifier if any, and
-  `reviewer="reviewer"`. A prose response alone does not complete a worker task.
+  `reviewer="reviewer"`. Identify yourself as implementer and name each
+  artifact with its workspace path and immutable revision/commit/content hash.
+  Stage scratch outputs as durable review attachments when the handoff supports
+  it, then report the attachment path. A prose response alone does not complete
+  a worker task.
 - Do not close another worker's card or present your own work as an independent
   review. For long-running work, keep the card's progress and heartbeat current.

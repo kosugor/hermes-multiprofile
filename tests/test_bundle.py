@@ -214,7 +214,7 @@ class BundleTests(unittest.TestCase):
             config = read(f"profiles/{name}/config.yaml")
             for line in required:
                 self.assertIn(line, config, f"{name}: {line}")
-            expected_persistence = "true" if name in {"web-scraper", "wiki-maintainer", "web-monitor"} else "false"
+            expected_persistence = "true" if name in {"coder", "reviewer", "web-scraper", "wiki-maintainer", "web-monitor"} else "false"
             self.assertIn(f"container_persistent: {expected_persistence}", config, name)
             if name in {"wiki-maintainer", "web-monitor"}:
                 expected_cwd = "/srv/hermes/wiki" if name == "wiki-maintainer" else "/srv/hermes/monitor"
@@ -381,9 +381,34 @@ class BundleTests(unittest.TestCase):
 
     def test_capture_validator_requires_provenance_hash_contract(self):
         validator = read("profiles/web-scraper/skills/web-clipper/scripts/validate-capture.py")
-        for field in ("retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
+        for field in ("supplied_url", "canonical_url", "published_at", "retrieved_at", "capture_status", "capture_method", "provider", "model", "content_sha256"):
             self.assertIn(field, validator)
-        self.assertIn("does not match the Markdown body", validator)
+        self.assertIn("does not match the exact Markdown body bytes", validator)
+        self.assertIn('"deferred"', validator)
+        self.assertIn('"--root"', validator)
+
+    def test_profile_workflow_quality_contracts(self):
+        orchestrator = read("profiles/orchestrator/SOUL.md")
+        self.assertIn("auto_decompose: false", read("profiles/orchestrator/config.yaml"))
+        self.assertIn("question a wiki change must answer", orchestrator)
+        self.assertIn("same card", orchestrator)
+        self.assertIn("wiki-writer.lock", orchestrator)
+        self.assertIn("prerequisite changed", orchestrator)
+        researcher = read("profiles/researcher/SOUL.md")
+        self.assertIn("claim ledger", researcher)
+        self.assertIn("author-claim", researcher)
+        reviewer = read("profiles/reviewer/SOUL.md")
+        self.assertIn("review-access blocker", reviewer)
+        self.assertIn("exact immutable", reviewer)
+        schema = read("profiles/wiki-maintainer/skills/maintain-obsidian-wiki/SCHEMA.md")
+        for marker in ("Question and definition", "Evidence ledger", "tested", "evidence-only/failed-sources"):
+            self.assertIn(marker, schema)
+        qmd = read("qmd/wiki-index.yml")
+        self.assertIn("wiki-evidence:", qmd)
+        self.assertIn("includeByDefault: false", qmd)
+        monitor = read("profiles/web-monitor/skills/run-web-monitor/SKILL.md")
+        for state in ("baseline", "no-change", "material-change", "fetch-failed"):
+            self.assertIn(state, monitor)
 
     def test_archive_audits_support_topic_wikis_and_inbox(self):
         audit = read("profiles/wiki-maintainer/skills/audit-vault-links/scripts/wiki-audit.py")
@@ -423,6 +448,7 @@ class BundleTests(unittest.TestCase):
             "install-egress-guard.sh",
             "install-monitor.sh",
             "install-wiki-triage.sh",
+            "wiki-writer-lock.py",
             "backup.sh",
             "restore.sh",
             "upgrade.sh",
@@ -531,6 +557,21 @@ class BundleTests(unittest.TestCase):
         self.assertIn('/srv/hermes/artifacts "$stage/srv/hermes/artifacts"', backup)
         self.assertIn("required_kib=$((source_kib * 2))", backup)
         self.assertIn("excluded_rebuildable=hermes-agent,node,qmd-runtime,bin", backup)
+
+    def test_wiki_writer_lock_is_shared_and_installed(self):
+        helper = read("scripts/wiki-writer-lock.py")
+        for operation in ("acquire", "inspect", "release", "compare_digest"):
+            self.assertIn(operation, helper)
+        for script in ("scripts/bootstrap-user.sh", "scripts/install-wiki-triage.sh"):
+            contents = read(script)
+            self.assertIn("wiki-writer-lock.py", contents)
+            self.assertIn("/.hermes-maintenance/", contents)
+        for profile_path in (
+            "profiles/web-scraper/skills/web-clipper/SKILL.md",
+            "profiles/wiki-maintainer/skills/maintain-obsidian-wiki/SKILL.md",
+            "profiles/wiki-maintainer/skills/scheduled-wiki-maintenance/SKILL.md",
+        ):
+            self.assertIn("wiki-writer-lock.py", read(profile_path))
 
     def test_skills_match_the_sandbox_and_tool_policy(self):
         for skill in (ROOT / "profiles").glob("*/skills/*/SKILL.md"):

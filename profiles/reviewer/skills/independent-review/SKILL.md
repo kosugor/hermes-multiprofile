@@ -15,9 +15,15 @@ metadata:
 ## Procedure
 
 1. Read the task requirement and acceptance criteria.
-2. Inspect the submitted diff or changed files.
-3. Inspect surrounding code only as needed to understand behavior.
-4. Check:
+2. Read the exact submitted artifact from this review worker's own accessible
+   workspace or durable attachment. Record its path and revision/hash before
+   proceeding. If it cannot be opened/read or does not match the handoff, stop
+   with `review-access-blocked`; attachment support described in product docs
+   does not establish attachment delivery/access in this run.
+3. Confirm this is the original implementation card, identify the named
+   implementer, and inspect that revision's diff or changed files.
+4. Inspect surrounding code only as needed to understand behavior.
+5. Check:
    - correctness and edge cases;
    - error handling and failure modes;
    - security boundaries and secret handling;
@@ -26,14 +32,14 @@ metadata:
    - API/schema compatibility;
    - tests and negative cases;
    - performance only where material.
-5. Run relevant tests/checks without changing source files.
-6. Compare claimed verification with what was actually executed.
-7. Report findings by severity:
+6. Run relevant tests/checks without changing source files.
+7. Compare claimed verification with what was actually executed.
+8. Report findings by severity:
    - BLOCKER: unsafe or fundamentally incorrect;
    - HIGH: likely user-visible failure, data loss, security, major regression;
    - MEDIUM: meaningful defect or maintainability risk;
    - LOW: limited impact.
-8. If no material defect is found, state what was checked and what remains
+9. If no material defect is found, state what was checked and what remains
    unverified.
 
 ## Independence Rules
