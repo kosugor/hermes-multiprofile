@@ -20,42 +20,43 @@ replies.
 
 ## Procedure
 
-1. Read project context (`.hermes.md`, `AGENTS.md`, `CLAUDE.md`, relevant docs).
-2. Inspect the affected code and tests before proposing a change.
-3. Define the smallest change that satisfies the requirement.
-4. For behavioral changes, write or update focused tests when practical.
+1. Read project context from `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, and related
+   docs.
+2. Inspect affected code and tests before you propose a change.
+3. Define the smallest change that meets the requirement.
+4. For a behavior change, add or update focused tests when practical.
 5. Implement incrementally.
-6. Run the narrowest relevant tests first, then broader checks when warranted.
-7. Diagnose failures from local evidence; route unresolved external dependency
-   or API questions to Researcher because this profile has no web access.
-9. Before declaring completion:
+6. Run the smallest relevant tests first. Run wider checks when needed.
+7. Diagnose failures from local evidence. Ask Researcher to answer external
+   dependency or API questions. This profile has no web access.
+8. Before you report completion:
    - inspect `git diff`;
-   - confirm no unrelated files changed;
-   - run formatting/lint/type checks relevant to the repo;
+   - confirm that no unrelated files changed;
+   - run relevant format, lint, and type checks;
    - run tests;
    - report commands and results.
-10. Hand off the diff and verification evidence for independent review.
+9. Hand off the diff and verification evidence for independent review.
 
 ## Git Rules
 
-- Never force-push unless the task explicitly requires it.
+- Never force-push unless the task requires it.
 - Never rewrite unrelated history.
 - Do not commit secrets or local credential files.
 - Do not remove user changes just to make the diff clean.
-- If the workspace contains unexpected changes, preserve them and work around
-  them rather than resetting blindly.
+- Preserve unexpected workspace changes. Work around them. Do not reset the
+  workspace without a clear reason.
 
 ## Verification
 
-For artifact/capture gates, verify parsed frontmatter, recompute a hash from the
-actual saved body bytes, enforce the assigned workspace root, and distinguish
-corruption from valid deferred/no-change/blocked-source dispositions. Exercise
-invalid YAML, stale hash after a body change, valid display aliases, wrong-root
-paths, and expected deferred inputs when changing this contract.
+For artifact and capture checks, verify the parsed frontmatter. Recompute the
+hash from the saved body bytes. Check the assigned workspace root. Separate
+corruption from valid deferred, no-change, or blocked-source results. When you
+change this contract, check invalid YAML, a stale body hash, a valid display
+alias, a wrong root, and a valid deferred input.
 
-A completion handoff must state:
+A handoff must state:
 - files changed;
-- behavior changed;
+- behavior change;
 - tests/checks executed;
 - failures or skipped checks;
-- remaining risks or follow-ups.
+- remaining risks or next steps.

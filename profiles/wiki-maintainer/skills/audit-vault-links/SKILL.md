@@ -1,6 +1,6 @@
 ---
 name: audit-vault-links
-description: Check Obsidian links, embeds and rename consequences within an assigned vault scope.
+description: Check Obsidian links, embeds, and rename effects in a vault scope.
 ---
 
 # audit-vault-links
@@ -11,17 +11,34 @@ Write internal English in ASD-STE100 style. Write curated wiki prose in Serbian.
 Keep required schema labels and values unchanged. Preserve source quotations in
 their original language.
 
-Identify the scope and collect note paths, frontmatter aliases, headings and block IDs. Ignore `.git`, `.obsidian`, `.trash`, `.hermes-backups` and `.hermes-maintenance` for note indexing. Distinguish existing broken links from ones introduced by this task.
+Set the scope. List note paths, aliases in frontmatter, headings, and block
+IDs. Do not index `.git`, `.obsidian`, `.trash`, `.hermes-backups`, or
+`.hermes-maintenance`. Separate old broken links from links that this task
+breaks.
 
-Inspect wikilinks `[[note]]`, aliases `[[note|label]]`, heading/block references, embeds `![[asset]]`, and Markdown links. Resolve relative paths and Obsidian basename links using existing vault conventions. Ambiguous duplicate basenames require judgment; do not silently choose one. A regex scan is only a candidate finder, not full Obsidian parsing.
+Check wikilinks such as `[[note]]` and `[[note|label]]`, heading and block
+references, embeds such as `![[asset]]`, and Markdown links. Resolve relative
+paths and Obsidian basename links by using the vault's link rules. If two
+basenames match, do not choose one without review. A regex scan can find
+candidates. It cannot fully parse Obsidian links.
 
-Before a rename, list incoming links/embeds, target collision risks and case-only rename issues. Preserve alias display text, heading suffixes and block references. For an authorized move, update only affected references and avoid changing link-looking text inside code fences.
+Before a rename, list incoming links and embeds. Check for target collisions
+and case-only name changes. Keep alias labels, heading suffixes, and block
+references. For an authorized move, update affected references only. Do not
+change link-like text in code fences.
 
-Run `scripts/validate-vault.py <vault>` for the deterministic full-vault check. It parses YAML frontmatter, validates links, and enforces the machine-checkable freshness, source-provenance, and Evidence ledger contract in `maintain-obsidian-wiki/SCHEMA.md` for `entities/`, `concepts/`, `comparisons/`, and `queries/`. Hubs are exempt from the evidence ledger because they are navigation pages. Re-read affected notes and verify new targets exist. Repair only in-scope unambiguous references; propose broader repairs instead of bulk rewriting the vault. Report newly broken links, pre-existing issues and ambiguous targets separately.
+Run `scripts/validate-vault.py <vault>` to check the full vault. It parses YAML
+frontmatter and links. It also checks freshness, source records, and the
+Evidence ledger in `maintain-obsidian-wiki/SCHEMA.md`. This check applies to
+`entities/`, `concepts/`, `comparisons/`, and `queries/`. Hubs do not need an
+Evidence ledger because they provide navigation. Read affected notes again.
+Confirm that new targets exist. Repair clear links in scope only. Propose wider
+repairs instead of rewriting the vault. Report new broken links, old issues,
+and unclear targets as separate items.
 
 Run `scripts/wiki-audit.py <vault> duplicates` for source-URL and SHA-256
 duplicate groups, or `scripts/wiki-audit.py <vault> clippings` for a
-read-only clipping triage report. These commands never mutate the vault unless
-an explicit `--write-report` path is supplied.
+read-only clipping report. These commands do not change the vault. They write a
+report only when you give `--write-report`.
 
-Exclude maintenance checkpoints and backup directories from ordinary note indexing.
+Do not index maintenance checkpoints or backup directories as notes.

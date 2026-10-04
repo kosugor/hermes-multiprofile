@@ -5,30 +5,28 @@ procedures, limits, and open questions. Keep quotations in their source
 language. Keep frontmatter keys, field values required by validators, and the
 required `Evidence ledger` heading and table columns unchanged.
 
-This lightweight contract applies to decision and procedure pages. Keep the
-vault's existing taxonomy and frontmatter; add these fields where missing
-without dropping established metadata.
+Use this contract for decision and procedure pages. Keep the vault's taxonomy
+and frontmatter. Add missing fields. Keep all current metadata.
 
 ## Required content
 
-For files under `entities/`, `concepts/`, `comparisons/`, and `queries/`, the
-vault validator enforces the structured subset below. A navigational page under
-`hubs/` is YAML-checked and link-checked, but does not need a claim ledger.
+The vault validator checks files under `entities/`, `concepts/`,
+`comparisons/`, and `queries/` against the schema below. It checks YAML and
+links on pages under `hubs/`. Hubs do not need a claim ledger.
 
-- **Freshness frontmatter:** `last_reviewed` is an ISO date. `review_after` is
-  either an ISO date or a positive interval such as `90 days`.
-- **Source provenance frontmatter:** `sources` is a non-empty YAML list. Each
-  item has an absolute HTTP(S) `url`, `published_at` (an ISO date or
-  `unknown`), and `retrieved_at` (an ISO date). Add `provider` and `model` on a
-  source record when they are relevant to how the evidence was produced.
-- **Evidence ledger:** include a `## Evidence ledger` Markdown table with these
-  columns in order: `Claim`, `Source / inspected passage`, `Published / updated`,
+- **Freshness:** Set `last_reviewed` to an ISO date. Set `review_after` to an
+  ISO date or positive interval, such as `90 days`.
+- **Sources:** Set `sources` to a non-empty YAML list. Give each source an
+  absolute HTTP(S) `url`, `published_at` date or `unknown`, and ISO
+  `retrieved_at` date. Add `provider` and `model` when they explain how you got
+  the evidence.
+- **Evidence ledger:** Add a `## Evidence ledger` table. Use these columns in
+  this order: `Claim`, `Source / inspected passage`, `Published / updated`,
   `Retrieved`, `Scope / version`, `Status`, and `Affected / updated page`.
-  Every non-header row needs a source URL or vault wikilink, publication date or
-  `unknown`, retrieval date, scope, one status from the list below, and an
-  affected page (use `this page` when appropriate). The validator checks the
-  table structure and values; it cannot establish that a claim is true or that
-  a cited passage supports it.
+  Give every data row a source URL or wiki link, publication date or `unknown`,
+  retrieval date, scope, status, and affected page. Use `this page` when needed.
+  The validator checks the table structure and values. It cannot prove a claim
+  or check that a source supports it.
 
 Example structured fields and ledger row:
 
@@ -50,55 +48,56 @@ sources:
 | Podešavanje je podrazumevano isključeno | https://example.com/documentation, “Configuration” | unknown | 2026-10-02 | version 3 | verified | this page |
 ```
 
-- **Question and definition:** state the question this page answers and define
-  the central concept in plain terms.
-- **Evidence ledger:** for each material claim record a source link and
-  inspected passage, publication/update date or `unknown`, retrieval date,
-  applicable conditions/version, status (`verified`, `author-claim`,
-  `inference`, `unverified`, or `conflict`), and affected/updated canonical
-  page. Keep a citation close to its claim.
-- **Decision or procedure:** give a usable decision guide or ordered steps.
-  State prerequisites and mark each procedure `tested` or `untested`, including
-  where and against which version it was tested.
-- **Scope and limits:** explain where the advice applies, limitations, known
+- **Question and definition:** State the page's question. Define the main
+  concept in plain terms.
+- **Evidence ledger:** Add a source and inspected passage for each material
+  claim. Record publication or update date, retrieval date, conditions, version,
+  status, and affected page. Use `verified`, `author-claim`, `inference`,
+  `unverified`, or `conflict` as the status. Put each citation near its claim.
+- **Decision or procedure:** Give a useful decision guide or ordered steps.
+  List prerequisites. Mark each procedure `tested` or `untested`. If tested,
+  state where and which version you tested.
+- **Scope and limits:** State where the advice applies. List limits, known
   conflicts, and open questions.
-- **Provenance and freshness:** retain canonical source URLs, publication and
-  retrieval dates, source/provider/model where relevant, `last_reviewed`, and a
-  `review_after` date or freshness interval.
-- **Concept links:** link to a small number of existing related concept pages
-  and update the owning topic hub/index when pages or key relationships change.
+- **Sources and freshness:** Keep canonical source URLs, publication and
+  retrieval dates, and source, provider, or model details when relevant. Set
+  `last_reviewed` and `review_after`.
+- **Concept links:** Link to a few related concept pages. Update the topic hub
+  when a page or key relationship changes.
 
 ## Disposition and search
 
-Canonical pages belong in the topic's existing `entities`, `concepts`,
-`comparisons`, `queries`, or `hubs` taxonomy. Hubs summarize the topic map and
-link to canonical pages; they are navigation pages, not duplicate article
-summaries. Each topic wiki has a `hubs/index.md` entry point. Reuse it if it
-exists; create it when absent and maintain its links when canonical pages are
-added, moved, or materially changed.
+Put canonical pages in the topic's `entities`, `concepts`, `comparisons`,
+`queries`, or `hubs` folders. Hubs show the topic map and link to canonical
+pages. Do not use them for article summaries. Each topic wiki has a
+`hubs/index.md` entry point. Reuse it when it exists. If you add, move, or
+change a canonical page, update the hub links.
 
-Keep permanent `shell`/`failed` captures under
-`evidence-only/failed-sources/`, with original bytes, source URL, failure reason,
-retrieval time, and the evidence that makes the failure terminal. Do not delete
-them or send them through routine triage. `partial` captures remain deferred
-until new evidence changes their disposition.
+Keep terminal `shell` and `failed` captures under
+`evidence-only/failed-sources/`. Keep the original bytes, source URL, failure
+reason, retrieval time, and evidence for the final disposition. Do not delete
+these files or send them through routine triage. Defer `partial` captures until
+new evidence changes their status.
 
 Normal QMD search uses canonical pages. Raw captures and evidence-only files
-are in an opt-in `wiki-evidence` collection; query it only when the task asks
-for source evidence or a citation needs rechecking.
+are in the optional `wiki-evidence` collection. Search it only when a task asks
+for source evidence or you must check a citation.
 
 ## Pilot and golden queries
 
-Before broad migration, review these pages against the schema:
+Before a broad migration, check these pages against the schema:
 
 - `local-llm-capacity-planning`
 - `tailscale-remote-local-model-access`
 - `model-api-pricing-and-capability-claims`
 
-After the pilot, run and record a small golden-query set that tests decisions,
-not article recall. Start with: (1) "How much RAM/VRAM do I need for this local
-model?" (2) "How do I securely reach a local model over Tailscale?" and (3)
-"Which model API fits this task and budget, and which pricing/capability claims
-are verified?" Confirm default results point to canonical pages; repeat one
-query with `wiki-evidence` explicitly selected and verify raw sources appear
-only in that opt-in result set.
+After the pilot, run and record queries that test decisions, not article recall.
+Start with these questions:
+
+1. How much RAM or VRAM does this local model need?
+2. How can I reach a local model through Tailscale securely?
+3. Which model API fits this task and budget? Which price and capability claims
+   have evidence?
+
+Confirm that default results point to canonical pages. Select `wiki-evidence`
+for one query. Confirm that only this query returns raw sources.

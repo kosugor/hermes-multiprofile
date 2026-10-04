@@ -1,6 +1,6 @@
 ---
 name: web-clipper
-description: Convert a supplied URL into clean Obsidian Markdown using Firecrawl first and the enabled browser only when extraction needs a real browser.
+description: Save a supplied URL as Obsidian Markdown. Use Firecrawl first.
 version: 1.0.0
 platforms: [linux]
 metadata:
@@ -14,60 +14,55 @@ metadata:
 
 ## Language
 
-Write internal English in ASD-STE100 style for Kanban messages and reports.
+Follow ASD-STE100 Issue 9 for internal English. Use short sentences, active
+verbs, and one term for one meaning in Kanban messages and reports.
 Preserve captured text in its original language. Do not translate raw captures.
 Use the operator's language for user-facing replies.
 
 ## Input
 
-A URL supplied by the user or orchestrator. The Telegram-facing command is
-`clip <absolute HTTP(S) URL>`; do not treat an ordinary URL in an unrelated
-message as a clipping request.
+Use a URL that the user or Orchestrator supplies. The Telegram command is
+`clip <absolute HTTP(S) URL>`. Do not treat another URL as a clipping request.
 
 ## Procedure
 
-For a Kanban `dir` workspace, treat the task's absolute `workspace_path` as the
-host-side bind-mount source, not as a path that should exist inside Docker.
-Hermes exposes it to terminal and file operations at `/workspace`. At startup,
-verify `/workspace` exists and is writable. For the configured wiki clipping
-workflow, also require `/workspace/.git` to exist and require
-`git -C /workspace rev-parse --show-toplevel` to resolve to `/workspace`. This is
-the mount canary: an empty, container-local `/workspace` is not the wiki and
-must never be accepted. Do not inspect `/srv/hermes/wiki` or block merely
-because that host path is absent inside the sandbox.
+For a Kanban `dir` workspace, `workspace_path` is the host mount path. It does
+not need to exist inside Docker. Hermes mounts it at `/workspace`. Check that
+`/workspace` exists and is writable. For wiki clipping, check that
+`/workspace/.git` exists. Run `git -C /workspace rev-parse --show-toplevel`.
+It must return `/workspace`. This check proves that `/workspace` is the wiki.
+Do not accept an empty container folder. Do not check for `/srv/hermes/wiki` in
+Docker or block because it is absent.
 
-Before reading/searching or writing any wiki file, run
+Before you read, search, or write a wiki file, run
 `python3 /workspace/.hermes-maintenance/wiki-writer-lock.py acquire --owner
-kanban:<task-id>:web-scraper`. Retain the returned token through artifact
-read-back and capture validation, then run
+kanban:<task-id>:web-scraper`. Keep the token through validation. Then run
 `python3 /workspace/.hermes-maintenance/wiki-writer-lock.py release --token
-<token>` with that exact token. This same lock protects Wiki Maintainer Kanban
-and cron edits. If acquisition fails, block without wiki work. The helper is
-installed by bootstrap and `install-wiki-triage.sh`.
+<token>` with that token. Wiki Maintainer, Kanban, and cron use the same lock.
+If you cannot acquire it, stop. Bootstrap and `install-wiki-triage.sh` install
+the helper.
 
-1. Normalize the URL and remove obvious tracking parameters when safe.
-2. Call `web_extract` using Firecrawl. Preserve the supplied URL separately
-   from any canonical URL returned by the page. Record publication/update date
-   only when the page states one; otherwise use `unknown`.
-3. Evaluate extraction quality:
+1. Normalize the URL. Remove clear tracking parameters when safe.
+2. Call `web_extract` with Firecrawl. Keep the supplied URL and canonical URL
+   as separate values. Record a publication or update date only when the page
+   states one. Otherwise, use `unknown`.
+3. Check extraction quality:
    - title present;
    - main body present;
    - headings/links/code preserved reasonably;
    - no dominant navigation or boilerplate.
-4. If extraction is incomplete, JavaScript-dependent, blocked, or requires
-   interaction, use the built-in local browser tools and managed Chromium.
-   `browser.backend: "off"` opts out of Browser Use CLI and does not disable
-   these built-in tools. If neither path captures the substantive body, retain
-   the observed evidence and classify it as `shell` or `failed`.
-5. Produce clean Markdown:
-   - one H1 title;
-   - preserve meaningful heading hierarchy;
-   - preserve code blocks, tables, lists, quotations, and useful links;
-   - remove menus, related-post grids, ads, cookie notices, repetitive footers;
-   - avoid rewriting the author's wording except for formatting cleanup. Do not
-     replace the clipping with an AI-generated summary.
-6. Add provenance frontmatter. Quote values when needed so the frontmatter
-   remains valid YAML:
+4. If extraction is incomplete, blocked, needs JavaScript, or needs interaction,
+   use the local browser tools and managed Chromium. `browser.backend: "off"`
+   turns off Browser Use CLI. It does not turn off these built-in tools. If
+   neither tool gets the source body, keep the evidence. Set status to `shell`
+   or `failed`.
+5. Write clean Markdown:
+   - Use one H1 title.
+   - Keep the source's heading order.
+   - Keep code blocks, tables, lists, quotes, and useful links.
+   - Remove menus, related posts, ads, cookie notices, and repeated footers.
+   - Keep the author's words. Change formatting only. Do not write an AI summary.
+6. Add source details to the frontmatter. Quote values when YAML needs quotes:
 
    ---
    title: "<page title>"
@@ -85,37 +80,34 @@ installed by bootstrap and `install-wiki-triage.sh`.
    content_sha256: "<SHA-256 of the exact saved body bytes after frontmatter>"
    ---
 
-7. Choose a filesystem-safe filename in the form
-   `<UTC timestamp with microseconds>-<title-slug>-<first-8-hash-chars>.md`
-   (for example, `20260921T033000123456Z-title-a1b2c3d4.md`). If a collision
-   still occurs, append a numeric suffix rather than overwriting. This
-   preserves a dated snapshot when the same URL is clipped more than once.
-8. Save to `/workspace/Inbox/Clippings/<filename>.md` unless the task
-   specifies a different workspace-relative destination. Create the directory
-   if it does not exist. A task referring to the host destination
-   `/srv/hermes/wiki/Inbox/Clippings` maps to this same container path; it does
-   not override the `/workspace` mount point.
-9. Run `scripts/validate-capture.py` on the saved Markdown and return the
-   created file path plus a one-sentence description. Before completing the
-   task, re-run the Git-root canary and confirm the new file is readable from
-   that same `/workspace`. If the canary fails, block the task and explicitly
-   state that the Docker workspace was ephemeral; never claim a host-equivalent
-   path.
+7. Use this filename form:
+   `<UTC timestamp with microseconds>-<title-slug>-<first-8-hash-chars>.md`.
+   Example: `20260921T033000123456Z-title-a1b2c3d4.md`. If the name exists, add
+   a number. Do not overwrite a file. Keep each dated capture of a URL.
+8. Save the file to `/workspace/Inbox/Clippings/<filename>.md`, unless the task
+   gives another workspace-relative path. Create the target folder if needed.
+   The host path `/srv/hermes/wiki/Inbox/Clippings` maps to this container path.
+   It does not change the `/workspace` mount.
+9. Run `scripts/validate-capture.py` on the saved file. Return its path and a
+   short description. Before you finish, repeat the Git-root check. Confirm
+   that the file is readable under `/workspace`. If the check fails, block the
+   task. State that Docker used an ephemeral workspace. Do not claim that the
+   file exists on the host.
 
 ## Search Rule
 
-Do not use `web_search` merely because it is available in the `web` toolset.
-The supplied URL is the source of truth. Search only if the task explicitly
-asks for related material or the canonical source cannot be resolved.
+Do not use `web_search` just because it is available. The supplied URL is the
+source of truth. Search only when the task asks for related sources or you
+cannot resolve the canonical URL.
 
 ## Fidelity Rule
 
-Clipping is not summarization. Preserve the meaningful article/page content.
-Only condense if the user explicitly asks for a summary.
+Do not summarize a clipping. Keep the source content. Condense it only when the
+user asks for a summary.
 
 ## Verification
 
-Re-read the saved Markdown and confirm:
+Read the saved Markdown again. Confirm that:
 - frontmatter is valid;
 - supplied and canonical URLs are present;
 - retrieval timestamp, capture metadata, provider/model, and body hash are

@@ -1,9 +1,8 @@
 # Hermes multi-profile VPS deployment
 
-This repository installs the seven-profile Hermes layout described below on a
-small ARM64 Linux VPS. Hermes itself runs directly as an unprivileged user.
-SearXNG, Firecrawl, and every model-controlled terminal session run in rootless
-Docker.
+This repository installs seven Hermes profiles on a small ARM64 Linux VPS.
+Hermes runs as an unprivileged user. Rootless Docker runs SearXNG, Firecrawl,
+and every model-controlled terminal session.
 
 ## Architecture
 
@@ -17,80 +16,75 @@ Docker.
 | `web-scraper` | Web Scraper | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 | `web-monitor` | Web Monitor | `openai-codex/gpt-5.6-luna` | OpenRouter free, then Nous free |
 
-The Orchestrator profile owns one multiplexed gateway, the Kanban dispatcher, and
-the only Telegram credential. The other six profiles are workers. Kanban concurrency
-starts at one because the target machine has two CPU cores.
+Orchestrator owns the shared gateway, Kanban dispatcher, and only Telegram
+credential. The other six profiles work as specialists. Kanban starts one
+worker at a time because the host has two CPU cores.
 
-Orchestrator keeps task decomposition manual (`auto_decompose: false`) and
-builds one linked graph. Wiki cards must state the question the page answers.
-Review returns to the original implementer on the same card and names an exact
-artifact revision; hard-blocked work stays blocked until a prerequisite change
-is evidenced. Web Scraper clipping, Kanban wiki writers, and cron share the
-exclusive `/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock`, managed by a
-token-checked helper installed during bootstrap.
+Orchestrator keeps task decomposition manual (`auto_decompose: false`). It builds
+one linked task graph. Wiki cards must state the page's question. Review returns
+to the original implementer on the same card. It must name an exact artifact
+revision. Keep a blocked task blocked until evidence shows that a prerequisite
+changed. Web Scraper, Kanban wiki tasks, and cron share one lock:
+`/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock`. Bootstrap installs the
+token-checking helper.
 
-The pinned Hermes `v2026.9.11` predates the upstream fix that makes a
-`platform_toolsets.telegram` Kanban grant pass the Kanban registry gate. The
-Orchestrator therefore also carries the narrow legacy `toolsets: [kanban]`
-compatibility opt-in. Gateway preflight requires it; remove it only as part of a
-reviewed Hermes upgrade that includes the upstream fix.
+Hermes `v2026.9.11` predates an upstream fix for Telegram Kanban grants. The
+grant uses `platform_toolsets.telegram`. The Kanban registry gate does not yet
+accept that setting in this release. Orchestrator also uses the narrow legacy
+setting `toolsets: [kanban]`. Gateway preflight requires it. Remove it only
+after a reviewed Hermes upgrade includes the upstream fix.
 
-Coder alone uses the profile-local `hermes-lcm` context engine, pinned to
-`v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`.
-Its raw messages and summary DAG remain inside the Coder profile and are covered
-by the normal Hermes state backup.
+Only Coder uses the profile-local `hermes-lcm` context engine. It is pinned to
+`v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`. Raw
+messages and the summary DAG stay in Coder's profile. The normal Hermes state
+backup includes them.
 
-Memory is deliberately role-scoped: Orchestrator, Researcher, Coder, and Wiki
-Maintainer use profile-local built-in memory; Reviewer, Web Scraper, and Web
-Monitor keep memory disabled for independence or deterministic file-backed
-state. No cloud or shared memory provider is configured. Langfuse-enabled
-profiles use the bundled observability plugin in metadata-only capture mode,
-with per-profile environment labels; it adds no model-callable tools. Wiki
-Maintainer and Web Scraper (web-clipper) intentionally have Langfuse disabled.
+Memory is role-scoped. Orchestrator, Researcher, Coder, and Wiki Maintainer use
+profile memory. Reviewer, Web Scraper, and Web Monitor have no memory. This
+keeps reviews independent and monitor state file-based. No cloud or shared
+memory service is set. Profiles with Langfuse use the bundled plugin in
+metadata-only mode. Each profile has its own environment label. The plugin
+adds no model-callable tools. Wiki Maintainer and Web Scraper's clipping skill
+do not use Langfuse.
 
-All profiles use ASD-STE100 principles for internal English in their `SOUL.md`
-prompts, memory notes, custom skills, Kanban cards, comments, handoffs, and
-profile-to-profile messages. Use the operator's language for user-facing
-replies. Write curated wiki titles and prose in Serbian; preserve raw clipping
-text and source quotations in their original language. Keep machine-required
-wiki labels and metadata values unchanged. See
+All profiles use ASD-STE100 Issue 9 for internal English. This rule applies to
+`SOUL.md`, memory notes, custom skills, Kanban cards, comments, handoffs, and
+messages between profiles. Use the operator's language in replies. Write
+curated wiki titles and prose in Serbian. Keep raw clippings and quotes in their
+source language. Keep required wiki labels and metadata unchanged. See
 [`profiles/WRITING-STANDARD.md`](profiles/WRITING-STANDARD.md).
 
-Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
-`/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
-checksum pinned. It runs locally in stdio mode and exposes only query,
-retrieval, and status tools. Default QMD queries search canonical pages; raw
-clippings and failed-source evidence are isolated in an explicitly selected
-`wiki-evidence` collection. The Wiki Maintainer skill pack carries `SCHEMA.md`
-and a three-page pilot checklist. A low-priority user
-timer refreshes its lexical index every 15 minutes at low priority. A separate
-overnight timer refreshes embeddings and the semantic index at half a CPU. The
-rebuildable index and approximately 2 GB of on-demand local models remain under
-`~/.cache/qmd` and are intentionally excluded from state backups.
+Only Wiki Maintainer gets read-only QMD `2.8.3` tools for `/srv/hermes/wiki`.
+Checksums pin QMD, its dependencies, and three GGUF model files. QMD runs on the
+host in stdio mode. It exposes query, retrieval, and status tools only. Default
+queries search canonical pages. Raw clippings and failed-source evidence need
+the optional `wiki-evidence` collection. The skill pack includes `SCHEMA.md`
+and a three-page pilot list. A low-priority timer refreshes the lexical index
+every 15 minutes. A second timer refreshes embeddings and the semantic index
+overnight at half a CPU. The rebuildable index and about 2 GB of local models
+stay under `~/.cache/qmd`. State backups omit them.
 
-On Ampere A1, QMD uses the packaged ARM64 node-llama-cpp CPU backend. A
-measured native KleidiAI build was slower for this wiki's semantic-query
-workload, so it is intentionally not enabled in production.
+On Ampere A1, QMD uses the packaged ARM64 node-llama-cpp CPU backend. A local
+test found a native KleidiAI build slower for this wiki's semantic queries. The
+production setup does not enable it.
 
-Native Hermes `execute_code` is disabled. File and shell operations use an
-ephemeral, networkless Docker backend. The `web` tool is limited to Researcher,
-Reviewer, Web Scraper, and Web Monitor, and calls loopback-only SearXNG and
-Firecrawl services. Researcher, Web Scraper, and Web Monitor also have Hermes'
-built-in browser tools,
-backed by local headless Chromium; Browser Use CLI mode is forced off, browser
-profiles and recordings are not persisted, and sensitive page-JavaScript
-primitives are restricted. The browser runs as the dedicated `hermes` user and
-is covered by the host UID egress guard. The sandbox uses a digest-pinned Python
-3.11/Node.js 22 Bookworm base and a date-pinned Debian snapshot for its reviewed
-build/test packages.
+Hermes `execute_code` is disabled. File and shell tools use a temporary Docker
+container with no network. Only Researcher, Reviewer, Web Scraper, and Web
+Monitor can use the `web` tool. It calls local SearXNG and Firecrawl services.
+These three profiles also use Hermes' built-in browser tools and local headless
+Chromium. Browser Use CLI is off. The browser does not save profiles or session
+recordings. It restricts sensitive page JavaScript. The dedicated `hermes`
+user runs the browser. The host UID egress guard protects it. The sandbox uses
+a digest-pinned Python 3.11 and Node.js 22 Bookworm image. Reviewed build and
+test packages use a date-pinned Debian snapshot.
 
 ## Prerequisites
 
 - ARM64 Ubuntu 22.04/24.04 or Debian 12 with cgroup v2.
 - At least 10 GiB RAM and 20 GiB free disk.
-- A dedicated `hermes` user with a working rootless Docker daemon and systemd
-  lingering. `scripts/install-host.sh` performs the host preparation.
-- Outbound HTTPS during bootstrap. The checksum-verified official installer is
+- A dedicated `hermes` user with rootless Docker and systemd lingering.
+  `scripts/install-host.sh` prepares the host.
+- Outbound HTTPS for bootstrap. The checksum-verified official installer is
   pinned to Hermes `v2026.9.11` / package `0.21.2` and commit
   `939e45c91d751fadd94dcd1b873ac3cb44846213`.
 - A Telegram bot token and the numeric Telegram ID of its sole operator.
@@ -99,46 +93,43 @@ build/test packages.
 
 ## Install
 
-Run the host preparation as root on a fresh VPS:
+Prepare the fresh VPS as root:
 
 ```bash
 sudo bash ./scripts/install-host.sh --user hermes
 ```
 
-Log in as `hermes`, place this checkout at `~/hermes-deployment`, and run:
+Log in as `hermes`. Put this checkout at `~/hermes-deployment`. Then run:
 
 ```bash
 bash ./scripts/bootstrap-user.sh
 ```
 
-The bootstrap is idempotent. It installs the exact Hermes release into the
-supported `~/.hermes/hermes-agent` layout, creates `/srv/hermes/projects`,
-`/srv/hermes/wiki`, `/srv/hermes/monitor` and its `monitoring` directory, and
-`/srv/hermes/artifacts`; creates
-the seven named Hermes
-profiles; backs up an existing profile configuration and skill pack before replacing it; builds the
-sandbox image; pulls every service image at its committed ARM64 digest; and
-installs user systemd units. Bundled skills are opted out for every profile,
-while reviewed profile-local skills are installed with their matching profiles.
-Bootstrap does
-not invent or overwrite secrets. It also installs the exact reviewed LCM
-release into `~/.hermes/profiles/coder/plugins/hermes-lcm`; an existing checkout
-must already be clean and at the approved commit. The lockfile-pinned QMD
-runtime, local models, and initial wiki index are installed for Wiki Maintainer.
-Browser provisioning installs
-`agent-browser` 0.26.0 and Playwright 1.62.1 exactly, then downloads Playwright's
-ARM64 Chromium build; it deliberately does not install Browser Use CLI.
-The committed `infra/images.lock.env` contains no credentials. Bootstrap
-refuses any non-digest reference or image that does not resolve to ARM64.
+Bootstrap is idempotent. It installs the pinned Hermes release under
+`~/.hermes/hermes-agent`. It creates `/srv/hermes/projects`, `/srv/hermes/wiki`,
+`/srv/hermes/monitor`, its `monitoring` folder, and `/srv/hermes/artifacts`.
+It creates seven profiles. Before it replaces a profile config or skill pack,
+it saves a backup. It builds the sandbox image, pulls each image at its
+committed ARM64 digest, and installs user systemd units. Each profile opts out
+of bundled skills. Bootstrap installs each reviewed profile skill pack.
+Bootstrap does not create or overwrite secrets.
 
-It also creates a `wiki` Kanban board and one board for every immediate Git
-repository under `/srv/hermes/projects`, each with an explicit board workdir.
-Run `scripts/sync-boards.sh` after adding a repository. Hermes' unavoidable
-`default` board remains an unbound control/inbox queue; task cards must still
-state `worktree:<path>` or `dir:<path>` explicitly so dispatcher context is
-authoritative.
+Bootstrap installs the reviewed LCM release at
+`~/.hermes/profiles/coder/plugins/hermes-lcm`. An existing checkout must be
+clean and use the approved commit. It installs the pinned QMD runtime and local
+models. It also builds the first wiki index for Wiki Maintainer. Browser setup
+installs `agent-browser` 0.26.0 and Playwright 1.62.1. It downloads the ARM64
+Chromium build. It does not install Browser Use CLI. The committed
+`infra/images.lock.env` has no credentials. Bootstrap rejects images without a
+digest or ARM64 support.
 
-Complete the generated secret files:
+Bootstrap also creates a `wiki` Kanban board and a board for each Git repo
+under `/srv/hermes/projects`. Each board has a workdir. Run
+`scripts/sync-boards.sh` after you add a repo. Hermes keeps an unbound `default`
+board for control and inbox tasks. Each task card must state
+`worktree:<path>` or `dir:<path>`. This makes the dispatcher use the right path.
+
+Add secrets to these generated files:
 
 ```bash
 editor ~/.hermes/profiles/orchestrator/.env
@@ -150,25 +141,25 @@ editor ~/.hermes/profiles/web-scraper/.env
 editor ~/.hermes/profiles/web-monitor/.env
 ```
 
-Only `~/.hermes/profiles/orchestrator/.env` receives `TELEGRAM_BOT_TOKEN`, the single numeric
-`TELEGRAM_ALLOWED_USERS` operator ID, and `TELEGRAM_ALLOWED_CHATS`. Set both ID
-fields to the same number; the second field makes access DM-only even for the
-operator. The gateway service refuses to start with an empty or broad
-allowlist. Put `OPENROUTER_API_KEY` only in the four fallback-enabled profiles.
+Put `TELEGRAM_BOT_TOKEN`, the operator's numeric ID in `TELEGRAM_ALLOWED_USERS`,
+and the same ID in `TELEGRAM_ALLOWED_CHATS` only in
+`~/.hermes/profiles/orchestrator/.env`. The chat field limits access to direct
+messages. The gateway will not start with an empty or broad allowlist. Put
+`OPENROUTER_API_KEY` only in the four profiles with a fallback.
 
-Each Langfuse-enabled profile requires operator-supplied credentials in its `.env`:
-`HERMES_LANGFUSE_PUBLIC_KEY` (`pk-lf-...`), `HERMES_LANGFUSE_SECRET_KEY`
-(`sk-lf-...`), and an HTTPS `HERMES_LANGFUSE_BASE_URL`. Keep
-`HERMES_LANGFUSE_CAPTURE=metadata`; the validator rejects missing credentials,
-non-HTTPS endpoints, or a different capture mode.
+Each profile that uses Langfuse needs these credentials in its `.env`:
+`HERMES_LANGFUSE_PUBLIC_KEY` (`pk-lf-...`),
+`HERMES_LANGFUSE_SECRET_KEY` (`sk-lf-...`), and an HTTPS
+`HERMES_LANGFUSE_BASE_URL`. Set `HERMES_LANGFUSE_CAPTURE=metadata`. The
+validator rejects missing credentials, non-HTTPS URLs, or another capture mode.
 Do not add an OpenAI API key.
 
-For an existing deployment, review and manually transfer the required values
-from `~/.hermes/.env` to `~/.hermes/profiles/orchestrator/.env` before starting
-the updated gateway. Bootstrap deliberately neither reads nor changes the
-built-in `default` profile or its files.
+For an existing deployment, review the required values in `~/.hermes/.env`.
+Copy them to `~/.hermes/profiles/orchestrator/.env` before you start the new
+gateway. Bootstrap does not read or change the built-in `default` profile or
+its files.
 
-Authenticate interactively with the headless device flow, then start services:
+Use the headless device flow to sign in. Then start the services:
 
 ```bash
 hermes auth add openai-codex
@@ -182,10 +173,9 @@ systemctl --user enable --now hermes-dashboard.service
 ./scripts/validate.sh
 ```
 
-This is subscription-backed ChatGPT OAuth shared from the root Hermes auth
-store by all profiles. Its Codex allowance is quota-limited and is not an
-OpenAI API credit balance. Check it with `hermes auth status`; this bundle never
-sets `OPENAI_API_KEY`.
+All profiles use subscription-backed ChatGPT OAuth from the root Hermes auth
+store. The Codex allowance has a quota. It is not OpenAI API credit. Run
+`hermes auth status` to check it. This bundle does not set `OPENAI_API_KEY`.
 
 The dashboard listens only on `127.0.0.1:9119`. From a workstation:
 
@@ -193,31 +183,30 @@ The dashboard listens only on `127.0.0.1:9119`. From a workstation:
 ssh -L 9119:127.0.0.1:9119 hermes@your-vps
 ```
 
-Then open `http://127.0.0.1:9119` locally.
-The same SSH-forwarding pattern works over a Tailscale address; do not change
-the dashboard bind away from loopback.
+Then open `http://127.0.0.1:9119` on your workstation. You can use the same SSH
+tunnel with a Tailscale address. Keep the dashboard bound to loopback.
 
 ## Host egress guard
 
-Firecrawl must reach public sites but must never reach OCI metadata or private
-networks. Preview and then install the UID-scoped nftables policy:
+Firecrawl must reach public sites. It must not reach OCI metadata or private
+networks. Preview the UID-scoped nftables policy. Then install it:
 
 ```bash
 sudo ./scripts/install-egress-guard.sh --user hermes
 sudo ./scripts/install-egress-guard.sh --user hermes --apply
 ```
 
-The apply step writes `/etc/nftables.d/hermes-egress.nft`, loads it, and ensures
-the main nftables configuration includes that directory. It should be run from
-the VPS console or with a second SSH session available. The policy leaves
-loopback, established connections, and public Internet destinations available,
-but rejects new link-local, RFC1918, CGNAT, benchmark, and IPv6-local flows for
-the `hermes` UID. The established-flow exception preserves an existing SSH or
-Tailscale tunnel while redirect targets still require a new, filtered flow.
+The apply step writes `/etc/nftables.d/hermes-egress.nft` and loads it. It also
+adds that folder to the main nftables config. Run it from the VPS console or
+keep a second SSH session open. The policy allows loopback, established
+connections, and public Internet traffic. For the `hermes` UID, it rejects new
+link-local, RFC1918, CGNAT, benchmark, and IPv6-local traffic. The established
+flow rule keeps SSH or Tailscale tunnels open. A redirect target still needs a
+new flow that passes the filter.
 
 ## Web monitor template
 
-Create a monitor in the paused state, avoiding a create-then-pause race:
+Create the monitor in the paused state. This avoids a create-then-pause race:
 
 ```bash
 MONITOR_NAME=vendor-release-notes \
@@ -228,11 +217,11 @@ MONITOR_MATERIALITY='new release, security advisory, or breaking change' \
 ./scripts/install-monitor.sh
 ```
 
-Use `MONITOR_SCHEMA` instead of, or alongside, `MONITOR_SELECTOR` when the
-monitor should retain a reviewed structured extraction.
+Use `MONITOR_SCHEMA` instead of or with `MONITOR_SELECTOR` when the monitor
+needs a reviewed structured extract.
 
-Inspect it, run it manually, and resume only after the baseline and Telegram
-delivery are correct:
+Inspect the monitor. Run it by hand. Resume it only after you confirm the
+baseline and Telegram delivery:
 
 ```bash
 hermes -p web-monitor cron list
@@ -240,64 +229,60 @@ hermes -p web-monitor cron run vendor-release-notes
 hermes -p web-monitor cron resume vendor-release-notes
 ```
 
-The monitor uses `/srv/hermes/monitor` as its host workspace and mounts it at
-`/workspace` in its networkless Docker terminal. The installer requires the
-bootstrap-created mount canary. Snapshots land under
-`/srv/hermes/monitor/monitoring/`. The monitor suppresses
-unchanged results with `[SILENT]`, and sends changes to `bot-chat:orchestrator` for
-orchestrator triage.
-Existing cron jobs keep their original workdir and snapshots. Recreate them
-after transferring their snapshots to `/srv/hermes/monitor/monitoring/`; the
-installer does not alter existing jobs.
-Web Monitor also exposes the `cronjob` control tool. Ask the profile directly
-to inspect or manage its monitor schedules; it keeps new and materially changed
-jobs paused until you approve their target and cadence.
+The monitor uses `/srv/hermes/monitor` on the host. Docker mounts it at
+`/workspace` with no network. The installer checks the mount canary that
+bootstrap creates. Snapshots go under `/srv/hermes/monitor/monitoring/`. The
+monitor returns `[SILENT]` when nothing changes. It sends changes to
+`bot-chat:orchestrator` for review.
+
+Current cron jobs keep their workdir and snapshots. Move their snapshots to
+`/srv/hermes/monitor/monitoring/`. Then recreate the jobs. The installer does
+not change current jobs. Web Monitor also has the `cronjob` tool. Ask the
+profile to check or manage its schedules. It keeps new or changed jobs paused
+until you approve the target and schedule.
 
 ## URL clipping and wiki triage
 
-Send an explicit command to the Telegram operator bot:
+Send this command to the Telegram operator bot:
 
 ```text
 clip https://example.com/article
 ```
 
-After installing or changing the compatibility opt-in, restart the gateway and
-send `/new` before retrying the command. Existing conversations retain their
-previous tool schema.
+After you install or change the compatibility setting, restart the gateway.
+Send `/new` before you retry the command. Current conversations keep their old
+tool schema.
 
-The Orchestrator routes that one-time capture to Web Scraper. Complete Markdown
-snapshots land in `/srv/hermes/wiki/Inbox/Clippings`; repeated captures keep
-dated snapshots with provenance and body hashes. Ordinary URLs in other
-messages are not clipped automatically. The card explicitly uses the `dir`
-workspace kind at `/srv/hermes/wiki`; on the pinned Hermes release, merely
-placing the card on a board with that default workdir still creates a scratch
-workspace. That absolute path is the host-side bind-mount source. Web Scraper
-accesses it as `/workspace` inside its Docker sandbox and writes clippings to
-`/workspace/Inbox/Clippings`; `/srv/hermes/wiki` is not expected to exist in the
-container.
+Orchestrator sends this one-time capture to Web Scraper. Complete Markdown
+files go to `/srv/hermes/wiki/Inbox/Clippings`. Repeated captures keep dates,
+source details, and body hashes. Other URLs are not clipping requests.
 
-If an older Orchestrator prompt already created a blocked scratch card, archive
-that card and retry after redeploying the profile, restarting the gateway, and
-sending `/new`. Workspace kind and path cannot be repaired with `kanban edit`
-on the pinned release.
+The task card must set `workspace_kind=dir` and
+`workspace_path=/srv/hermes/wiki`. The pinned Hermes release needs both values.
+A board's default workdir does not prevent a scratch workspace. The absolute
+path names the host mount source. Docker mounts it at `/workspace`. Web Scraper
+must save clippings under `/workspace/Inbox/Clippings`. It must not look for
+`/srv/hermes/wiki` inside Docker.
 
-If a correctly configured `dir:/srv/hermes/wiki` card was blocked only because
-the worker looked for that host path inside Docker, deploy the updated Web
-Scraper profile. Before unblocking, append a corrective card comment that the
-host path is mounted at `/workspace` and supersedes the earlier request to make
-`/srv/hermes/wiki` visible inside Docker. Then unblock the same card; no
-replacement is needed.
+If an old Orchestrator prompt made a blocked scratch card, archive it. Redeploy
+the profile, restart the gateway, and send `/new`. Then retry. This Hermes
+release cannot change workspace kind or path with `kanban edit`.
 
-The pinned release also needs `container_persistent: true` for Web Scraper and
-Wiki Maintainer so their process-level task cwd is retained as the Docker
-bind-mount source; cross-process reuse remains disabled. The clipping skill treats the wiki's
-`.git` directory as a mount canary and must not complete from an empty,
-container-local `/workspace`. If a card was already marked done but its file is
-missing on the host, retain that card as false-success evidence and create a
-replacement with a fresh idempotency key after deploying this workaround.
+If a correct `dir:/srv/hermes/wiki` card blocks because the worker looks for the
+host path in Docker, deploy the updated Web Scraper profile. Before you unblock
+the card, add a comment. State that Docker mounts the host path at `/workspace`.
+State that this rule replaces any request to expose `/srv/hermes/wiki` in
+Docker. Then unblock the same card. Do not create a replacement.
 
-Install the daily Wiki Maintainer triage job. It is created paused so the first
-run can be inspected before unattended local commits are enabled:
+The pinned release needs `container_persistent: true` for Web Scraper and Wiki
+Maintainer. This keeps the task workdir as the Docker mount source. It does not
+allow container reuse across processes. The clipping skill checks the wiki's
+`.git` folder. It must stop if `/workspace` is empty. If a done card has no
+host file, keep it as false-success evidence. Deploy this fix. Then create a
+replacement card with a new idempotency key.
+
+Install the daily Wiki Maintainer triage job. It starts paused. Check its first
+run before you enable local commits:
 
 ```bash
 ./scripts/install-wiki-triage.sh
@@ -305,24 +290,24 @@ hermes -p wiki-maintainer cron run wiki-clipping-triage
 hermes -p wiki-maintainer cron resume wiki-clipping-triage
 ```
 
-Before resuming, check `hermes -p wiki-maintainer cron runs wiki-clipping-triage`,
-the profile-local `cron/output/wiki-clipping-triage/` files if no run is listed,
-`/srv/hermes/wiki/.hermes-maintenance/reports/`, and the wiki Git status and
-latest commit. A successful agent run does not by itself mean any clipping was
-processed. The Wiki Maintainer profile sets `timezone: Europe/Belgrade` so the
-03:30 schedule follows local time, including daylight saving changes.
+Before you resume the job, check
+`hermes -p wiki-maintainer cron runs wiki-clipping-triage`. If no run appears,
+check the profile's `cron/output/wiki-clipping-triage/` files. Also check
+`/srv/hermes/wiki/.hermes-maintenance/reports/`, Git status, and the latest wiki
+commit. A successful agent run does not prove that it processed a clipping.
+Wiki Maintainer uses `timezone: Europe/Belgrade`. The 03:30 run follows local
+time through daylight saving changes.
 
-The job runs daily at 03:30 Europe/Belgrade, processes at most 20 inbox
-clippings, archives each source under one of
+The job runs every day at 03:30 Europe/Belgrade. It processes up to 20 inbox
+clippings. It archives each source under one of these folders:
 `investments/raw/clippings`, `devops/raw/clippings`,
-`software-development/raw/clippings`, or `ai/raw/clippings`, and updates or
-creates curated pages with source links. It commits only successful paths from
-that run; partial captures, conflicts, and unrelated working-tree changes stay
-untouched. Empty successful runs return `[SILENT]`.
+`software-development/raw/clippings`, or `ai/raw/clippings`. It updates or
+creates curated pages with source links. It commits only paths that pass that
+run's checks. It leaves partial captures, conflicts, and unrelated worktree
+changes alone. An empty successful run returns `[SILENT]`.
 
-For clippings created before the capture frontmatter contract, deploy the
-updated Wiki Maintainer profile and skill, then update the existing paused job
-and run triage directly:
+For older clippings without the capture frontmatter, deploy the updated Wiki
+Maintainer profile and skill. Update the paused job. Then run triage:
 
 ```bash
 profile="$HOME/.hermes/profiles/wiki-maintainer"
@@ -338,12 +323,11 @@ WIKI_TRIAGE_UPDATE_EXISTING=1 ./scripts/install-wiki-triage.sh
 hermes -p wiki-maintainer cron run wiki-clipping-triage
 ```
 
-The triage run recognizes legacy title/source/capture headers, reviews each
-clipping, and adds honest legacy provenance metadata as it archives the file.
-It preserves the Markdown body, records uncertainty about source access or
-capture completeness, and includes that uncertainty in curated pages. The
-installer update keeps the existing job paused; inspect the local triage commit
-and report before resuming the schedule.
+Triage reads older title, source, and capture headers. It reviews each clipping.
+It adds legacy provenance to the archived file and keeps the Markdown body. It
+records uncertainty about source access or capture completeness. It adds that
+uncertainty to curated pages. The update keeps the job paused. Check the local
+commit and report before you resume the schedule.
 
 ## Operations
 
@@ -356,39 +340,40 @@ hermes -p orchestrator kanban inspect
 journalctl --user -u hermes-gateway -f
 ```
 
-The web service starts both SearXNG and the extraction stack. During extended
-coding, stop extraction without interrupting search or the gateway:
+The web service starts SearXNG and the extraction stack. During long coding
+tasks, stop extraction. Search and the gateway remain available:
 
 ```bash
 ./scripts/compose.sh extraction-stop
 ./scripts/validate.sh --core-web
 ```
 
-Restore extraction before research or monitoring work with
+Restore extraction before research or monitoring. Run
 `./scripts/compose.sh extraction-up`. The next restart of `hermes-web.service`
 also restores the full stack.
 
-`scripts/backup.sh` briefly stops the dashboard and gateway for a consistent
-archive. It includes projects, wiki, artifacts, profile state, and runtime
-secrets, while excluding reproducible Hermes, Node, QMD, and browser runtimes.
-It checks free space before staging. Restore archives are extracted only into a
-new empty staging directory by `scripts/restore.sh`; run bootstrap first to
-recreate those runtimes, then deliberately restore approved state paths.
+`scripts/backup.sh` stops the dashboard and gateway for a consistent archive.
+The backup contains projects, wiki, artifacts, profile state, and runtime
+secrets. It omits Hermes, Node, QMD, and browser runtimes because setup can
+recreate them. The script checks free space before it stages files.
+`scripts/restore.sh` extracts an archive only into a new empty folder. Run
+bootstrap first to restore the runtimes. Then restore approved state paths.
 
-When a worker reports a missing dependency, update the reviewed inputs under
-`images/hermes-sandbox/dependencies/` and run
-`scripts/rebuild-sandbox.sh --apply` as the operator. Python entries must be
-version- and hash-pinned; Node dependencies must come from `package-lock.json`.
-Never install a dependency from a model-controlled terminal.
+When a worker reports a missing dependency, update the reviewed files under
+`images/hermes-sandbox/dependencies/`. As the operator, run
+`scripts/rebuild-sandbox.sh --apply`. Pin each Python package by version and
+hash. Use `package-lock.json` for Node packages. Never install a package from a
+model-controlled terminal.
 
-Image upgrades are explicit: edit `infra/images.sources.env`, run
-`scripts/upgrade.sh --plan`, inspect its output, then run
-`scripts/upgrade.sh --apply`. The script takes a consistent state backup before
-it refreshes locked image digests; review and commit the resulting lock. Hermes
-itself is intentionally excluded from
-that path. Review a tested exact release tag, preview
-`scripts/upgrade-hermes.sh --tag <tag>`, then run it with `--apply`. The script
-refuses a dirty checkout, takes a backup, installs from the detached tag,
-validates, and returns to the old commit if installation or validation fails.
-Set `APPROVED_HERMES_TAG=<tag>` for later bootstrap and validation runs.
-Never run Compose with floating tags directly.
+Upgrade images by an explicit process. Edit `infra/images.sources.env`. Run
+`scripts/upgrade.sh --plan` and check its output. Then run
+`scripts/upgrade.sh --apply`. The script saves a state backup before it updates
+image digests. Review and commit the new lock. This process does not upgrade
+Hermes.
+
+For Hermes, choose a tested release tag. Preview
+`scripts/upgrade-hermes.sh --tag <tag>`. Then run it with `--apply`. The script
+refuses a dirty checkout. It saves a backup and installs from the detached tag.
+It validates the install. If install or validation fails, it restores the old
+commit. Set `APPROVED_HERMES_TAG=<tag>` for later bootstrap and validation runs.
+Never run Compose with floating tags.

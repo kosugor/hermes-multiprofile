@@ -1,6 +1,6 @@
 ---
 name: independent-review
-description: Independent read-mostly review workflow for code and technical deliverables, with severity-ranked findings and test evidence.
+description: Review code and technical work. Rank findings by severity and cite test evidence.
 version: 1.0.0
 platforms: [linux]
 metadata:
@@ -21,14 +21,13 @@ operator's language for user-facing replies.
 ## Procedure
 
 1. Read the task requirement and acceptance criteria.
-2. Read the exact submitted artifact from this review worker's own accessible
-   workspace or durable attachment. Record its path and revision/hash before
-   proceeding. If it cannot be opened/read or does not match the handoff, stop
-   with `review-access-blocked`; attachment support described in product docs
-   does not establish attachment delivery/access in this run.
+2. Read the exact artifact from this worker's workspace or an accessible
+   attachment. Record its path and revision or hash. If the artifact is missing
+   or does not match the handoff, stop. Return `review-access-blocked`. Product
+   docs do not prove that this run received the attachment.
 3. Confirm this is the original implementation card, identify the named
    implementer, and inspect that revision's diff or changed files.
-4. Inspect surrounding code only as needed to understand behavior.
+4. Read related code only when you need it to understand behavior.
 5. Check:
    - correctness and edge cases;
    - error handling and failure modes;
@@ -39,14 +38,14 @@ operator's language for user-facing replies.
    - tests and negative cases;
    - performance only where material.
 6. Run relevant tests/checks without changing source files.
-7. Compare claimed verification with what was actually executed.
+7. Compare the reported checks with the checks that ran.
 8. Report findings by severity:
    - BLOCKER: unsafe or fundamentally incorrect;
-   - HIGH: likely user-visible failure, data loss, security, major regression;
+   - HIGH: likely visible failure, data loss, security risk, or major regression;
    - MEDIUM: meaningful defect or maintainability risk;
    - LOW: limited impact.
-9. If no material defect is found, state what was checked and what remains
-   unverified.
+9. If you find no material defect, state what you checked and what you did not
+   verify.
 
 ## Independence Rules
 
@@ -54,12 +53,11 @@ operator's language for user-facing replies.
 - Do not turn review into refactoring.
 - Do not waive a finding because the implementation is otherwise good.
 - Do not require stylistic changes that are unsupported by repo conventions.
-- When external documentation is required to decide a finding, flag the exact
-  research question for the researcher profile.
+- If you need external documentation, give Researcher the exact question.
 
 ## Output
 
-Return:
+Return these items:
 - verdict: approve / approve-with-notes / changes-required;
 - findings with severity and evidence;
 - tests/checks run and outcomes;

@@ -1,24 +1,22 @@
 # Deployment acceptance runbook
 
-Run `scripts/validate.sh` first. It checks the installed profile count and
-configuration, pinned browser helper and ARM64 Chromium, a real headless-browser
-navigation, rootless Docker, service health, loopback listeners, SearXNG,
-Firecrawl static and JavaScript extraction, private-address denial, the host
-egress table, and a networkless sandbox canary.
+Run `scripts/validate.sh` first. It checks profile count and config. It checks
+the pinned browser helper and ARM64 Chromium. It opens a page in the headless
+browser. It checks rootless Docker, service health, loopback listeners, SearXNG,
+Firecrawl extraction, private-address denial, the host egress table, and a
+networkless sandbox canary.
 
-The remaining checks require real model or Telegram interactions and therefore
-stay explicit rather than consuming quota during bootstrap.
+The remaining checks need real model or Telegram use. Keep them out of
+bootstrap so they do not use model quota.
 
 ## Resolved tool inventory
 
-Start a fresh session on each reachable surface and run `/tools list`. Record
-the result below the matching profile. It must be the exact expansion of the
-configured positive allowlist. Fail if `execute_code`, `delegate_task`,
-`browser_exec`, computer-use tools, messaging, or any undeclared tool appears.
-The ordinary `browser_*` interaction tools are permitted only for Researcher,
-Web Scraper, and Web Monitor;
-some CDP, vault, dialog, and vision entries in the reviewed upper bound remain
-runtime-gated and may be absent.
+Start a fresh session on each available surface. Run `/tools list`. Record the
+result under its profile. It must match the configured allowlist. Fail if the
+list has `execute_code`, `delegate_task`, `browser_exec`, computer-use tools,
+messaging, or any undeclared tool. Only Researcher, Web Scraper, and Web Monitor
+may use the `browser_*` tools. Runtime checks may hide some CDP, vault, dialog,
+and vision tools from the reviewed upper bound.
 
 | Session | Expected toolsets |
 | --- | --- |
@@ -30,185 +28,186 @@ runtime-gated and may be absent.
 | Web Scraper Kanban worker | web, built-in browser, file, terminal, plus Kanban lifecycle tools |
 | Web Monitor cron worker | web, built-in browser, file, terminal, cronjob |
 
-Also inspect a dashboard session. The dashboard must not widen the Orchestrator
-profile's allowlist. Save all inventories as deployment evidence.
+Inspect a dashboard session too. It must not widen Orchestrator's allowlist.
+Save every tool list as deployment evidence.
 
-For Coder, also run `lcm_status` in a fresh session. Confirm the plugin version
-is `1.0.0-rc.1`, the context engine is `lcm`, and the database path is scoped
-below `~/.hermes/profiles/coder`. LCM is a host-side plugin, so any additional
-or renamed schema is an unreviewed capability and must fail acceptance.
+For Coder, run `lcm_status` in a fresh session. Confirm plugin version
+`1.0.0-rc.1`, context engine `lcm`, and a database path under
+`~/.hermes/profiles/coder`. LCM is a host plugin. Fail acceptance if it adds or
+renames a schema. That change is an unreviewed capability.
 
-The automated audit resolves every configured toolset through the installed
-Hermes registry and compares it with `policy/tool-inventory.json`. For each
-browser-enabled profile it removes the mutually exclusive `browser_exec` surface
-only after verifying `browser.backend: "off"` and every local-browser hardening
-setting.
-It separately checks the exact union created when the dispatcher injects Kanban
-lifecycle tools against `policy/kanban-worker-inventory.json`. When a tested
-Hermes patch intentionally changes a toolset, review the new tool before
-updating either policy file.
+The automated audit resolves each toolset through the installed Hermes
+registry. It compares results with `policy/tool-inventory.json`. For each
+browser profile, it removes the mutually exclusive `browser_exec` tool only
+after it checks `browser.backend: "off"` and every local-browser security
+setting. The audit also checks the dispatcher-added Kanban tools against
+`policy/kanban-worker-inventory.json`. If a tested Hermes patch changes a
+toolset, review the new tool before you update either policy file.
 
 The audit also enforces the profile capability policy:
 
-- `memory` is available only to Orchestrator, Researcher, Coder, and Wiki
-  Maintainer. Reviewer, Web Scraper, and Web Monitor must have it explicitly
-  disabled; their state is kept in review artifacts or monitor snapshots.
-- `skills` and `skills_hub` are disabled everywhere. Profile-local reviewed
-  skills are installed separately and are not permission-granting toolsets.
-- `kanban` is standing only for Orchestrator and is dispatcher-injected for
-  workers. `clarify` is Orchestrator-only.
-- `code_execution`, `delegation`, and `messaging` are disabled for every
-  profile. `cronjob` is enabled only for Web Monitor, with
-  `cron.allow_agent_scheduling: true`; its instructions limit job changes to
-  explicit user requests and keep new or materially changed jobs paused pending
-  approval. Telegram is a gateway adapter, not an agent-callable messaging tool.
-- Coder must select `context.engine: lcm`; every other profile must explicitly
-  select the built-in `compressor` engine.
-- `observability/langfuse` is enabled for Orchestrator, Researcher, Coder,
-  Reviewer, and Web Monitor but contributes no callable tools. It is disabled
-  for Wiki Maintainer and Web Scraper. Deployment validation requires the pinned
-  SDK, HTTPS endpoint, profile-scoped environment label, and
-  `HERMES_LANGFUSE_CAPTURE=metadata` for enabled profiles.
+- `memory` is enabled only for Orchestrator, Researcher, Coder, and Wiki
+  Maintainer. Disable it for Reviewer, Web Scraper, and Web Monitor. Their state
+  stays in review artifacts or monitor snapshots.
+- Disable `skills` and `skills_hub` for every profile. Install reviewed local
+  skills separately. They do not grant tools.
+- Only Orchestrator has `kanban` in its config. The dispatcher adds it for
+  workers. Only Orchestrator has `clarify`.
+- Disable `code_execution`, `delegation`, and `messaging` for every profile.
+  Enable `cronjob` only for Web Monitor. Set
+  `cron.allow_agent_scheduling: true`. Its prompt permits schedule changes only
+  when the user asks. It keeps new or changed jobs paused until approval.
+  Telegram is a gateway adapter. Agents cannot call it as a messaging tool.
+- Set `context.engine: lcm` for Coder. Set the built-in `compressor` engine for
+  every other profile.
+- Enable `observability/langfuse` for Orchestrator, Researcher, Coder, Reviewer,
+  and Web Monitor. It adds no callable tools. Disable it for Wiki Maintainer and
+  Web Scraper. For enabled profiles, validate the pinned SDK, HTTPS endpoint,
+  profile label, and `HERMES_LANGFUSE_CAPTURE=metadata`.
 
-For Wiki Maintainer, call `mcp__qmd__status` and confirm `wiki` at
-`/srv/hermes/wiki` is included by default and `wiki-evidence` at the same root
-is excluded by default. Search for a known canonical page with
-`mcp__qmd__query`, retrieve it with `mcp__qmd__get`, then explicitly select
-`wiki-evidence` and confirm a known clipping can be retrieved only on that
-opt-in search. Confirm `/tools list`
-contains no QMD collection-management or write tools. Verify
-`hermes-qmd-index.timer` and `hermes-qmd-embed.timer` are active and their most
-recent service runs succeeded.
+For Wiki Maintainer, call `mcp__qmd__status`. Confirm that `wiki` at
+`/srv/hermes/wiki` is in the default set. Confirm that `wiki-evidence` at the
+same path is not in the default set. Search for a known canonical page with
+`mcp__qmd__query`. Retrieve it with `mcp__qmd__get`. Select `wiki-evidence` and
+confirm that this search can retrieve a known clipping. Confirm that `/tools
+list` has no QMD write or collection tools. Confirm that
+`hermes-qmd-index.timer` and `hermes-qmd-embed.timer` are active. Confirm that
+their latest service runs succeeded.
 
 ## Browser-enabled profile fixture
 
-1. For Researcher, Web Scraper, and Web Monitor, confirm `/tools list` includes `browser_navigate`, `browser_snapshot`, and
-   `browser_click`, and does not include `browser_exec`.
-2. Navigate to `https://example.com/`, capture a snapshot, and confirm the title
-   and page text are returned from the local headless session.
-3. Ask the worker to use Browser Use CLI or a real browser profile. Confirm it
-   refuses and continues with the built-in tools and an ephemeral profile.
-4. Navigate to `http://169.254.169.254/latest/meta-data/` and confirm Hermes'
-   metadata floor rejects it before navigation. Record the denial.
-5. End the task and confirm its `agent-browser` session is closed within the
-   configured 60-second inactivity limit.
+1. For Researcher, Web Scraper, and Web Monitor, confirm `/tools list` has
+   `browser_navigate`, `browser_snapshot`, and `browser_click`. Confirm it has
+   no `browser_exec`.
+2. Open `https://example.com/` and capture a snapshot. Confirm that the local
+   headless session returns the title and page text.
+3. Ask the worker to use Browser Use CLI or a real browser profile. Confirm that
+   it refuses. Confirm that it uses built-in tools and an ephemeral profile.
+4. Open `http://169.254.169.254/latest/meta-data/`. Confirm that Hermes blocks
+   the request before navigation. Record the denial.
+5. End the task. Confirm that `agent-browser` closes the session within
+   60 seconds.
 
 ## Kanban request-changes fixture
 
-1. Create a disposable Git repository and a dedicated worktree below
+1. Create a temporary Git repo and a worktree under
    `/srv/hermes/projects/acceptance`.
-2. Ask Orchestrator to create one coding card with an observable acceptance
-   criterion and a required Reviewer gate.
-3. In the first review, intentionally leave one criterion unmet. Confirm the
-   Reviewer returns the same card to Coder with a concrete change request.
-4. Confirm the Reviewer worker can open and read the exact staged artifact in
-   its own Docker workspace and report its path plus commit/hash. If this read
-   fails, the review must stay blocked with `review-access-blocked`; do not
-   infer access from the attachment list or product documentation. Check the
-   card names the original implementer and correction returns to that same
-   implementer on the same card.
-5. Confirm Coder corrects the artifact on that card, the Reviewer reads the new
-   exact revision, and one approval completes the cycle without a duplicate
-   implementation graph.
+2. Ask Orchestrator for one coding card. Give it a clear acceptance criterion
+   and a required Reviewer check.
+3. In the first review, leave one criterion unmet. Confirm that Reviewer
+   returns the same card to Coder with a clear change request.
+4. Confirm that Reviewer can read the exact staged artifact in its Docker
+   workspace. Confirm that it reports the path and commit or hash. If it cannot
+   read the artifact, keep review blocked with `review-access-blocked`. Do not
+   infer access from a list of attachments or product docs. Check that the card
+   names the original implementer. Check that the correction returns to that
+   person on the same card.
+5. Confirm that Coder fixes the artifact on that card. Confirm that Reviewer
+   reads the new revision. One approval must finish the cycle. Do not create a
+   second implementation graph.
 
 ## Capture quality gate
 
-Run `python3 -m unittest discover -s tests -v`. Confirm invalid YAML,
-changed body/stale hash, wrong workspace root, and malformed provenance return
-corruption; a valid display alias passes; and a valid partial capture returns
-`outcome=deferred` with exit status zero. Confirm `complete` captures hash the
-exact saved bytes after frontmatter. A `shell` or `failed` page is never
-accepted as a complete source.
+Run `python3 -m unittest discover -s tests -v`. Confirm that invalid YAML, a
+changed body with a stale hash, a wrong workspace root, and bad provenance
+return corruption. Confirm that a valid alias passes. Confirm that a valid
+partial capture returns `outcome=deferred` with exit status zero. For a
+`complete` capture, confirm that the hash covers the exact bytes after
+frontmatter. Never accept a `shell` or `failed` page as a complete source.
 
 ## Wiki pilot and writer lock
 
-Run the Wiki Maintainer pilot on `local-llm-capacity-planning`,
-`tailscale-remote-local-model-access`, and
-`model-api-pricing-and-capability-claims`. Verify each page and its topic hub
-against the bundled `SCHEMA.md`, then run its golden queries and confirm default
-search returns canonical pages while evidence appears only when
-`wiki-evidence` is explicitly requested. Attempt a concurrent cron and Kanban
-edit and verify exactly one lock-helper `acquire` succeeds; the other exits
-before QMD or file edits. Confirm a paused monitor remains
-paused after a manual run.
-4. Let Coder correct it and commit locally. Confirm the second review approves.
-5. In both worker transcripts, confirm the worktree appears at `/workspace` and
-   that no profile-level `terminal.cwd` overrides it.
-6. Confirm there was never more than one in-progress card, no remote changed,
-   and nothing was pushed, merged, published, or deployed.
+Run the Wiki Maintainer pilot on these pages:
+`local-llm-capacity-planning`, `tailscale-remote-local-model-access`, and
+`model-api-pricing-and-capability-claims`. Check each page and topic hub against
+`SCHEMA.md`. Run the golden queries. Confirm that default search returns
+canonical pages. Confirm that raw evidence appears only when you select
+`wiki-evidence`. Start cron and Kanban edits at the same time. Confirm that one
+lock `acquire` succeeds. Confirm that the other stops before QMD or file access.
+Run a paused monitor by hand. Confirm that it stays paused.
+
+## Kanban workspace fixture
+
+1. Let Coder fix the artifact and commit it locally. Confirm that Reviewer
+   approves the second review.
+2. In both worker logs, confirm that the worktree is at `/workspace`. Confirm
+   that no profile-level `terminal.cwd` changes that path.
+3. Confirm that no more than one card was in progress. Confirm that no Git
+   remote changed. Confirm that no one pushed, merged, published, or deployed.
 
 ## Telegram authorization fixture
 
-Send a direct message from the configured numeric operator ID and confirm it
-reaches `orchestrator`. Then message from a second account and from a group. Neither
-must receive agent access or create a session. Confirm only the Orchestrator profile
-contains `TELEGRAM_BOT_TOKEN`.
+Send a direct message from the configured operator ID. Confirm that it reaches
+`orchestrator`. Send a message from a second account and a group. Neither may
+get agent access or create a session. Confirm that only Orchestrator's profile
+has `TELEGRAM_BOT_TOKEN`.
 
 ## Monitor fixture
 
-Serve a public test page that can be changed safely. Install a paused monitor
-with `scripts/install-monitor.sh`, then:
+Serve a public test page that you can change safely. Use
+`scripts/install-monitor.sh` to create a paused monitor. Then follow these steps:
 
-1. Run it manually once and confirm a baseline with URL, UTC timestamp, and a
-   source-provided content hash (when Firecrawl exposes one). Confirm the
-   Docker terminal finds `/workspace/.hermes-monitor-workspace` and the snapshot
-   appears on the host under `/srv/hermes/monitor/monitoring/`.
+1. Run the monitor by hand. Confirm a baseline with URL, UTC time, and a source
+   hash when Firecrawl supplies one. Confirm Docker finds
+   `/workspace/.hermes-monitor-workspace`. Confirm the host snapshot appears
+   under `/srv/hermes/monitor/monitoring/`.
 2. Run it unchanged and confirm `[SILENT]` produces no Telegram delivery.
-3. Change material content once and confirm exactly one result reaches
+3. Change material content once. Confirm that one result reaches
    `bot-chat:orchestrator`.
-4. Keep it paused unless a real target, cadence, selector/schema, and material
-   change rule have been reviewed.
+4. Keep the monitor paused until someone reviews its target, schedule,
+   selector or schema, and materiality rule.
 
 ## URL clipping and wiki triage fixture
 
-1. Send `clip https://example.com/` from the authorized Telegram operator and
-   confirm Orchestrator creates a Web Scraper card on the `wiki` board with
-   `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki` (not `scratch`).
-2. Confirm the worker uses the Docker-visible `/workspace` mount rather than
-   looking for `/srv/hermes/wiki` inside the sandbox. Require
-   `/workspace/.git` and a `/workspace` Git toplevel before capture. Confirm the
-   resulting Markdown exists on the host under
-   `/srv/hermes/wiki/Inbox/Clippings`, contains the canonical URL, UTC
-   retrieval/capture metadata, provider/model, and a body SHA-256, and that a
-   second capture receives a distinct dated filename.
-3. Run `scripts/install-wiki-triage.sh` and confirm the
-   `wiki-clipping-triage` job is paused, uses the scheduled maintenance skill,
-   `/srv/hermes/wiki` workdir, `every day at 03:30` in Europe/Belgrade, and
-   delivers to `bot-chat:orchestrator`.
-4. Run the paused job manually against fixtures for all four topic wikis. Check
-   its run record, dated maintenance report, and host wiki Git status before
-   treating the CLI's `Ran now: succeeded` line as a completed triage.
-   Confirm each complete source moves to exactly one `<topic>/raw/clippings`
-   directory, partial captures remain in the inbox, and curated pages are
-   updated or created with the source URL and canonical clipping link.
-5. Confirm an unchanged duplicate snapshot is retained without duplicating
-   claims, link/frontmatter/duplicate/clipping audits pass, and one local Git
-   commit contains only paths produced by the successful run.
-6. Repeat with a pre-staged index, a concurrent target edit, and unrelated
-   unstaged changes. The job must refuse or skip safely, never absorb unrelated
-   changes, and leave failed sources in `Inbox/Clippings`.
-7. Resume the job only after the manual result, commit, report, and Telegram
-   delivery have been inspected.
+1. Send `clip https://example.com/` from the authorized Telegram account.
+   Confirm that Orchestrator creates a Web Scraper card on the `wiki` board.
+   Confirm `workspace_kind=dir` and `workspace_path=/srv/hermes/wiki`. Do not
+   accept `scratch`.
+2. Confirm that the worker uses `/workspace`. It must not look for
+   `/srv/hermes/wiki` inside Docker. Before capture, require `/workspace/.git`
+   and a Git root of `/workspace`. Confirm that the Markdown file appears on
+   the host under `/srv/hermes/wiki/Inbox/Clippings`. Check the canonical URL,
+   UTC times, provider, model, and body SHA-256. Clip the URL again. Confirm
+   that the second file has a different dated name.
+3. Run `scripts/install-wiki-triage.sh`. Confirm that
+   `wiki-clipping-triage` is paused. Confirm that it uses the scheduled
+   maintenance skill and `/srv/hermes/wiki` workdir. Confirm its schedule is
+   daily at 03:30 Europe/Belgrade. Confirm delivery to `bot-chat:orchestrator`.
+4. Run the paused job by hand with fixtures for all four topic wikis. Check the
+   run record, dated report, and host Git status. Do not trust the CLI's
+   `Ran now: succeeded` line by itself. Confirm that each complete source moves
+   to one `<topic>/raw/clippings` folder. Confirm that partial captures stay in
+   the inbox. Confirm that curated pages contain the source URL and clipping
+   link.
+5. Keep a duplicate dated snapshot. Do not repeat its claims. Run link,
+   frontmatter, duplicate, and clipping checks. Confirm that one local commit
+   contains only paths from the successful run.
+6. Repeat with a staged index, a concurrent edit, and unrelated unstaged
+   changes. Confirm that the job refuses or skips safely. Confirm that it does
+   not add unrelated changes. Keep failed sources in `Inbox/Clippings`.
+7. Inspect the manual result, commit, report, and Telegram delivery. Then resume
+   the job.
 
-For pre-contract September 2026 clippings, update the existing paused job with
-`WIKI_TRIAGE_UPDATE_EXISTING=1 scripts/install-wiki-triage.sh`, then run triage
-manually. Confirm the profile itself reads all four legacy Markdown files,
-extracts their explicit source and capture headers, preserves each article
-body in its archive copy, records `capture_status: legacy-reviewed` with
-honest source/completeness caveats, updates curated pages, and commits only
-successful triage paths. No separate migration command is used.
+For clippings from before September 2026, update the paused job with
+`WIKI_TRIAGE_UPDATE_EXISTING=1 scripts/install-wiki-triage.sh`. Then run triage
+by hand. Confirm that the profile reads all four old Markdown files. Confirm
+that it reads their source and capture headers. Confirm that each archive copy
+keeps the article body. Confirm `capture_status: legacy-reviewed` and honest
+source and completeness limits. Confirm that curated pages change. Confirm
+that the commit has successful paths only. Do not use a separate migration
+command.
 
 ## Soak and recovery
 
-Run `scripts/validate.sh --soak-hours 24` in a persistent terminal with one
-worker active and one Firecrawl extraction. Review `docker stats`, kernel logs,
-and `ss -lnt` during the run. Require no OOM kills, host memory below 10 GiB,
-no sustained load above two, and no unexpected public listener.
+Run `scripts/validate.sh --soak-hours 24` in a persistent terminal. Keep one
+worker and one Firecrawl extraction active. During the run, check `docker
+stats`, kernel logs, and `ss -lnt`. Require no OOM kills. Keep host memory
+below 10 GiB. Keep load below two. Require no unexpected public listener.
 
-As root, also record `nft list table inet hermes_egress`; the unprivileged
-validator confirms the installed rules file and active nftables service, while
-the Firecrawl probes exercise the denial path.
+As root, record `nft list table inet hermes_egress`. The unprivileged validator
+checks the rules file and nftables service. Firecrawl probes test the denial
+path.
 
-Finally run `scripts/backup.sh`, verify its checksum, stage it with
-`scripts/restore.sh`, and compare the restored profiles, Kanban SQLite data,
-repositories, wiki, and artifacts to their sources before declaring readiness.
+Run `scripts/backup.sh`. Check its checksum. Stage the archive with
+`scripts/restore.sh`. Compare the restored profiles, Kanban SQLite data, repos,
+wiki, and artifacts with their sources. Then declare readiness.

@@ -1,6 +1,6 @@
 ---
 name: deep-web-research
-description: Default evidence-first workflow for deep web research using SearXNG search, Firecrawl extraction, and the built-in browser only as a fallback.
+description: Research web questions with SearXNG, Firecrawl, and the built-in browser.
 version: 1.0.0
 platforms: [linux]
 metadata:
@@ -20,14 +20,13 @@ language. Use the operator's language for user-facing replies.
 
 ## When to Use
 
-Use this as the default workflow for open-ended web research, current technical
-questions, product/project comparisons, documentation investigation, or any task
-where multiple sources should be reconciled.
+Use this workflow for broad web research, current technical questions, product
+comparisons, documentation checks, and tasks that need source comparisons.
 
 ## Procedure
 
 1. Restate the research question internally as concrete subquestions.
-2. Search with SearXNG using several targeted queries rather than one giant query.
+2. Search SearXNG with several focused queries.
 3. Prefer primary sources:
    - official documentation and repositories;
    - standards bodies and specifications;
@@ -35,41 +34,40 @@ where multiple sources should be reconciled.
    - original research papers;
    - authoritative public records.
 4. Use `web_extract` through Firecrawl on promising URLs.
-5. Only use the built-in browser when extraction fails or the page requires
+5. Use the built-in browser only when extraction fails or the page needs
    JavaScript, interaction, authentication, or anti-bot handling.
-6. Cross-check material claims with a second independent source when practical.
-7. Track freshness. For changing software, prices, policies, model names, or
-   service limits, favor sources with explicit current dates.
+6. Check important claims against another source when practical.
+7. Check source dates. For software, prices, policies, model names, and service
+   limits, prefer sources with clear current dates.
 8. Separate:
    - confirmed fact;
    - inference;
    - recommendation;
    - uncertainty/conflict.
-9. Return a concise synthesis plus the source URLs that support each important
-   conclusion.
+9. Return a short summary. Give the source URL for each important conclusion.
 
 ## Source Quality Rules
 
 - Documentation beats blogs for product behavior.
 - Source repositories/release notes beat secondary summaries for software.
-- A search-result snippet is discovery evidence, not final evidence.
+- A search-result snippet helps you find sources. It does not verify a claim.
 - Do not cite a page you did not actually inspect when its contents matter.
-- Do not over-weight SEO pages, scraped copies, or AI-generated summaries.
+- Give less weight to SEO pages, scraped copies, and AI summaries.
 
 ## Browser Escalation
 
-Firecrawl first. Built-in browser second.
+Use Firecrawl first. Use the built-in browser second.
 
 Escalate to the built-in browser only when one of these is true:
 - extracted content is incomplete or empty;
-- navigation is required to reach the content;
-- JavaScript renders the material;
+- you must use navigation to reach the content;
+- JavaScript creates the page content;
 - a cookie/login session is explicitly required;
 - anti-bot behavior blocks normal extraction.
 
 ## Handoff
 
-Return:
+Return these items:
 - direct answer;
 - key findings;
 - important caveats/conflicts;
