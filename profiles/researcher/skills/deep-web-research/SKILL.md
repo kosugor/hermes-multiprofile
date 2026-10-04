@@ -12,6 +12,12 @@ metadata:
 
 # Deep Web Research
 
+## Language
+
+Write internal English in ASD-STE100 style. Use this style for research reports,
+claim ledgers, and Kanban messages. Keep source quotations in their original
+language. Use the operator's language for user-facing replies.
+
 ## When to Use
 
 Use this as the default workflow for open-ended web research, current technical

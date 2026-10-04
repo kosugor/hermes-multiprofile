@@ -12,6 +12,12 @@ metadata:
 
 # Web Clipper
 
+## Language
+
+Write internal English in ASD-STE100 style for Kanban messages and reports.
+Preserve captured text in its original language. Do not translate raw captures.
+Use the operator's language for user-facing replies.
+
 ## Input
 
 A URL supplied by the user or orchestrator. The Telegram-facing command is

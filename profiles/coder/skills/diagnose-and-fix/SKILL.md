@@ -6,6 +6,12 @@ description: Reproduce a software defect, identify its cause and verify a focuse
 
 # diagnose-and-fix
 
+## Language
+
+Write internal English in ASD-STE100 style. Use short sentences, direct verbs,
+and one term for one meaning in reports and Kanban messages. Use the operator's
+language for user-facing replies.
+
 Capture expected versus observed behavior and the minimal failing input. Inspect logs and relevant code without printing credentials. Reproduce in the authorized offline workspace; if impossible, record exactly why and keep the diagnosis provisional.
 
 Form a testable cause and distinguish it from correlated symptoms. Follow data/control flow to the failure. Change the smallest responsible behavior. Add a regression test when it would catch the real defect; avoid tests that merely assert the implementation's wording.

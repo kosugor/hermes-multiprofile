@@ -5,6 +5,12 @@ description: Maintain a file-based source list and discover selectable documenta
 
 # manage-web-watchlist
 
+## Language
+
+Write internal English in ASD-STE100 style for monitoring records, reports, and
+profile-to-profile messages. Use the operator's language for user-facing
+replies.
+
 Use `/workspace/monitoring/watchlist.json` as the only watch registry. If it is absent, copy the supplied `watchlist.example.json` from this profile pack only when the user asks to initialize monitoring. Never replace a populated watchlist with the example.
 
 Before editing, parse the JSON and validate `version`, unique source IDs, supported source types, absolute HTTP(S) URLs, and unique page URLs within each site. Preserve unknown fields. Read the file again immediately before replacement; if it changed, stop and report a conflict. Write through a temporary file followed by an atomic rename, and retain `/workspace/monitoring/backups/watchlist-<UTC timestamp>.json` before a material edit.

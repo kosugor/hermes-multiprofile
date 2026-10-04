@@ -5,6 +5,12 @@ description: Run a stateful manual or scheduled check and summarize only new or 
 
 # run-web-monitor
 
+## Language
+
+Write internal English in ASD-STE100 style for reports and profile-to-profile
+messages. Keep source quotations in their original language. Use the operator's
+language for user-facing replies.
+
 Read `/workspace/monitoring/watchlist.json` and the per-source records under `/workspace/monitoring/state/`. Check only enabled sources and site pages marked `watch: true`. Record the UTC start time and the current watchlist content fingerprint. If a previous run is still active, skip rather than overlap it.
 
 Choose the least brittle retrieval path:

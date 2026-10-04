@@ -5,6 +5,12 @@ description: Make scoped Obsidian note edits while preserving conventions, prove
 
 # maintain-obsidian-wiki
 
+## Language
+
+Write internal English in ASD-STE100 style. Write curated wiki prose in Serbian.
+Keep required schema labels and values unchanged. Preserve source quotations in
+their original language.
+
 Before QMD search or any wiki access, acquire the shared lock with
 `python3 /workspace/.hermes-maintenance/wiki-writer-lock.py acquire --owner
 kanban:<task-id>:wiki-maintainer`. Retain the returned token through validation

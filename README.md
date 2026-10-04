@@ -48,6 +48,14 @@ profiles use the bundled observability plugin in metadata-only capture mode,
 with per-profile environment labels; it adds no model-callable tools. Wiki
 Maintainer and Web Scraper (web-clipper) intentionally have Langfuse disabled.
 
+All profiles use ASD-STE100 principles for internal English in their `SOUL.md`
+prompts, memory notes, custom skills, Kanban cards, comments, handoffs, and
+profile-to-profile messages. Use the operator's language for user-facing
+replies. Write curated wiki titles and prose in Serbian; preserve raw clipping
+text and source quotations in their original language. Keep machine-required
+wiki labels and metadata values unchanged. See
+[`profiles/WRITING-STANDARD.md`](profiles/WRITING-STANDARD.md).
+
 Wiki Maintainer alone receives a read-only QMD `2.8.3` MCP surface over
 `/srv/hermes/wiki`. QMD, its dependencies, and its three GGUF model files are
 checksum pinned. It runs locally in stdio mode and exposes only query,

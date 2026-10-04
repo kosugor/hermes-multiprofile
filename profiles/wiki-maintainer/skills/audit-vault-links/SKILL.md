@@ -5,6 +5,12 @@ description: Check Obsidian links, embeds and rename consequences within an assi
 
 # audit-vault-links
 
+## Language
+
+Write internal English in ASD-STE100 style. Write curated wiki prose in Serbian.
+Keep required schema labels and values unchanged. Preserve source quotations in
+their original language.
+
 Identify the scope and collect note paths, frontmatter aliases, headings and block IDs. Ignore `.git`, `.obsidian`, `.trash`, `.hermes-backups` and `.hermes-maintenance` for note indexing. Distinguish existing broken links from ones introduced by this task.
 
 Inspect wikilinks `[[note]]`, aliases `[[note|label]]`, heading/block references, embeds `![[asset]]`, and Markdown links. Resolve relative paths and Obsidian basename links using existing vault conventions. Ambiguous duplicate basenames require judgment; do not silently choose one. A regex scan is only a candidate finder, not full Obsidian parsing.

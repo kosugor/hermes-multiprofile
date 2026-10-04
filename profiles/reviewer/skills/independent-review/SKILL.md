@@ -12,6 +12,12 @@ metadata:
 
 # Independent Review
 
+## Language
+
+Write internal English in ASD-STE100 style. Use this style for findings and
+Kanban messages. Keep source quotations in their original language. Use the
+operator's language for user-facing replies.
+
 ## Procedure
 
 1. Read the task requirement and acceptance criteria.

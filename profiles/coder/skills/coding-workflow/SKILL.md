@@ -12,6 +12,12 @@ metadata:
 
 # Coding Workflow
 
+## Language
+
+Write internal English in ASD-STE100 style. Use this style for memory, comments,
+reports, and Kanban messages. Use the operator's language for user-facing
+replies.
+
 ## Procedure
 
 1. Read project context (`.hermes.md`, `AGENTS.md`, `CLAUDE.md`, relevant docs).

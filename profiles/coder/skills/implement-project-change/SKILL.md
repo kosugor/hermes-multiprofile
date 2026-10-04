@@ -6,6 +6,12 @@ description: Implement a scoped repository change and hand off a reproducible re
 
 # implement-project-change
 
+## Language
+
+Write internal English in ASD-STE100 style. Use this style for code comments,
+reports, and Kanban messages. Write curated wiki prose in Serbian when the task
+changes the wiki. Use the operator's language for user-facing replies.
+
 Locate the assigned project under `/workspace`. Read applicable AGENTS.md and project documentation. Inspect git status and the relevant code before changing files; identify user edits and the requested acceptance behavior.
 
 Use an assigned branch or authorized isolated project copy. Make the smallest coherent implementation consistent with the project's conventions. Avoid unrelated formatting, dependency upgrades and public API changes. Never use reset --hard or clean to discard a dirty workspace.

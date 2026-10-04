@@ -6,6 +6,12 @@ description: Check factual claims, version compatibility and citations before a 
 
 # verify-research-claims
 
+## Language
+
+Write internal English in ASD-STE100 style. Use this style for claim ledgers,
+reports, and Kanban messages. Keep source quotations in their original language.
+Use the operator's language for user-facing replies.
+
 List claims that determine the recommendation, especially numbers, prices, dates, configuration keys and compatibility. For each, identify an actually read source and the relevant supporting passage or code location. Remove unsupported precision.
 
 Check that URLs resolve to the claimed document, the cited version applies, and a source explicitly states what you attribute to it. A search result or another AI answer is not sufficient verification. Trace secondary reports to originals where practical.

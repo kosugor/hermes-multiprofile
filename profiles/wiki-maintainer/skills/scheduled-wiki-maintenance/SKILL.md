@@ -5,6 +5,12 @@ description: Run bounded recurring Obsidian maintenance with persistent checkpoi
 
 # Scheduled wiki maintenance
 
+## Language
+
+Write internal English in ASD-STE100 style. Write titles and prose in curated
+wiki pages in Serbian. Keep validator-required labels and values unchanged.
+Preserve raw clipping text and source quotations in their original language.
+
 Read the cron prompt as the scope of this run. Load `maintain-obsidian-wiki`
 and `audit-vault-links`. Use the assigned `/workspace` through the Docker tools.
 Keep offline execution, QMD, and current mounts unchanged.

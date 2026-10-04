@@ -1,5 +1,10 @@
 # Canonical wiki page schema
 
+Write curated page prose in Serbian. This includes titles, headings, claims,
+procedures, limits, and open questions. Keep quotations in their source
+language. Keep frontmatter keys, field values required by validators, and the
+required `Evidence ledger` heading and table columns unchanged.
+
 This lightweight contract applies to decision and procedure pages. Keep the
 vault's existing taxonomy and frontmatter; add these fields where missing
 without dropping established metadata.
@@ -28,6 +33,7 @@ vault validator enforces the structured subset below. A navigational page under
 Example structured fields and ledger row:
 
 ```yaml
+title: "Naziv kanonske stranice"
 last_reviewed: 2026-10-02
 review_after: 90 days
 sources:
@@ -41,7 +47,7 @@ sources:
 
 | Claim | Source / inspected passage | Published / updated | Retrieved | Scope / version | Status | Affected / updated page |
 | --- | --- | --- | --- | --- | --- | --- |
-| The setting defaults to off | https://example.com/documentation, “Configuration” | unknown | 2026-10-02 | version 3 | verified | this page |
+| Podešavanje je podrazumevano isključeno | https://example.com/documentation, “Configuration” | unknown | 2026-10-02 | version 3 | verified | this page |
 ```
 
 - **Question and definition:** state the question this page answers and define
