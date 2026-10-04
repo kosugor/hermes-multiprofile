@@ -41,5 +41,5 @@ docker build --platform linux/arm64 --pull=false \
   --build-arg BASE_IMAGE="$SANDBOX_BASE_IMAGE" \
   -t "$image" "$repo_root/images/hermes-sandbox"
 docker run --rm --network none "$image" bash -ceu \
-  'git --version; rg --version; jq --version; curl --version; cc --version; cmake --version; ninja --version; shellcheck --version; sqlite3 --version; python --version; node --version; npm --version'
+  'git --version; rg --version; jq --version; curl --version; cc --version; cmake --version; ninja --version; shellcheck --version; sqlite3 --version; python --version; python -c "import yaml; print(yaml.__version__)"; node --version; npm --version'
 echo "Rebuilt and smoke-tested $image. Existing terminal containers are ephemeral and are not reused."

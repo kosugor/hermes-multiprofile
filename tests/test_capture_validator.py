@@ -50,6 +50,25 @@ class CaptureValidatorTests(unittest.TestCase):
             self.assertEqual(1, result.returncode)
             self.assertIn("invalid YAML frontmatter", json.loads(result.stdout)["errors"][0])
 
+    def test_full_yaml_sequences_and_nested_mappings_are_supported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "capture.md"
+            extra = "capture_details: {headers: [content-type, etag], browser: {used: false}}\n"
+            path.write_bytes(render_capture(b"# Example\nBody.\n", extra=extra))
+            result = self.run_validator(path, root)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual("complete", json.loads(result.stdout)["outcome"])
+
+    def test_duplicate_yaml_keys_are_corruption(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "capture.md"
+            path.write_bytes(render_capture(b"# Example\n", extra='title: "Shadow"\n'))
+            result = self.run_validator(path, root)
+            self.assertEqual(1, result.returncode)
+            self.assertIn("duplicate key", json.loads(result.stdout)["errors"][0])
+
     def test_changed_body_with_stale_hash_is_corruption(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

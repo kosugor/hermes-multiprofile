@@ -11,7 +11,7 @@ Inspect wikilinks `[[note]]`, aliases `[[note|label]]`, heading/block references
 
 Before a rename, list incoming links/embeds, target collision risks and case-only rename issues. Preserve alias display text, heading suffixes and block references. For an authorized move, update only affected references and avoid changing link-looking text inside code fences.
 
-Run `scripts/validate-vault.py <vault>` for the deterministic full-vault check. Re-read affected notes and verify new targets exist. Repair only in-scope unambiguous references; propose broader repairs instead of bulk rewriting the vault. Report newly broken links, pre-existing issues and ambiguous targets separately.
+Run `scripts/validate-vault.py <vault>` for the deterministic full-vault check. It parses YAML frontmatter, validates links, and enforces the machine-checkable freshness, source-provenance, and Evidence ledger contract in `maintain-obsidian-wiki/SCHEMA.md` for `entities/`, `concepts/`, `comparisons/`, and `queries/`. Hubs are exempt from the evidence ledger because they are navigation pages. Re-read affected notes and verify new targets exist. Repair only in-scope unambiguous references; propose broader repairs instead of bulk rewriting the vault. Report newly broken links, pre-existing issues and ambiguous targets separately.
 
 Run `scripts/wiki-audit.py <vault> duplicates` for source-URL and SHA-256
 duplicate groups, or `scripts/wiki-audit.py <vault> clippings` for a

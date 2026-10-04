@@ -387,6 +387,12 @@ class BundleTests(unittest.TestCase):
         self.assertIn('"deferred"', validator)
         self.assertIn('"--root"', validator)
 
+    def test_yaml_validator_dependency_is_pinned_and_smoke_checked(self):
+        requirements = read("images/hermes-sandbox/dependencies/python-requirements.lock")
+        self.assertIn("PyYAML==6.0.3", requirements)
+        self.assertIn("--hash=sha256:", requirements)
+        self.assertIn('import yaml; print(yaml.__version__)', read("scripts/rebuild-sandbox.sh"))
+
     def test_profile_workflow_quality_contracts(self):
         orchestrator = read("profiles/orchestrator/SOUL.md")
         self.assertIn("auto_decompose: false", read("profiles/orchestrator/config.yaml"))
@@ -401,7 +407,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("review-access blocker", reviewer)
         self.assertIn("exact immutable", reviewer)
         schema = read("profiles/wiki-maintainer/skills/maintain-obsidian-wiki/SCHEMA.md")
-        for marker in ("Question and definition", "Evidence ledger", "tested", "evidence-only/failed-sources"):
+        for marker in ("Question and definition", "Evidence ledger", "last_reviewed", "review_after", "sources:", "tested", "evidence-only/failed-sources"):
             self.assertIn(marker, schema)
         qmd = read("qmd/wiki-index.yml")
         self.assertIn("wiki-evidence:", qmd)

@@ -6,6 +6,44 @@ without dropping established metadata.
 
 ## Required content
 
+For files under `entities/`, `concepts/`, `comparisons/`, and `queries/`, the
+vault validator enforces the structured subset below. A navigational page under
+`hubs/` is YAML-checked and link-checked, but does not need a claim ledger.
+
+- **Freshness frontmatter:** `last_reviewed` is an ISO date. `review_after` is
+  either an ISO date or a positive interval such as `90 days`.
+- **Source provenance frontmatter:** `sources` is a non-empty YAML list. Each
+  item has an absolute HTTP(S) `url`, `published_at` (an ISO date or
+  `unknown`), and `retrieved_at` (an ISO date). Add `provider` and `model` on a
+  source record when they are relevant to how the evidence was produced.
+- **Evidence ledger:** include a `## Evidence ledger` Markdown table with these
+  columns in order: `Claim`, `Source / inspected passage`, `Published / updated`,
+  `Retrieved`, `Scope / version`, `Status`, and `Affected / updated page`.
+  Every non-header row needs a source URL or vault wikilink, publication date or
+  `unknown`, retrieval date, scope, one status from the list below, and an
+  affected page (use `this page` when appropriate). The validator checks the
+  table structure and values; it cannot establish that a claim is true or that
+  a cited passage supports it.
+
+Example structured fields and ledger row:
+
+```yaml
+last_reviewed: 2026-10-02
+review_after: 90 days
+sources:
+  - url: https://example.com/documentation
+    published_at: unknown
+    retrieved_at: 2026-10-02
+```
+
+```markdown
+## Evidence ledger
+
+| Claim | Source / inspected passage | Published / updated | Retrieved | Scope / version | Status | Affected / updated page |
+| --- | --- | --- | --- | --- | --- | --- |
+| The setting defaults to off | https://example.com/documentation, “Configuration” | unknown | 2026-10-02 | version 3 | verified | this page |
+```
+
 - **Question and definition:** state the question this page answers and define
   the central concept in plain terms.
 - **Evidence ledger:** for each material claim record a source link and

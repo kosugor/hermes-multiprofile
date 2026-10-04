@@ -10,7 +10,8 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(?:[ \t]+(.*))?$", re.ASCII)
+import yaml
+
 HASH_RE = re.compile(r"[0-9a-fA-F]{64}")
 STATUSES = {"complete", "partial", "shell", "failed"}
 ERROR_SHELL_RE = re.compile(
@@ -24,6 +25,40 @@ REQUIRED = (
 )
 
 
+class UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate keys instead of silently losing data."""
+
+
+def _construct_unique_mapping(loader: UniqueKeySafeLoader, node: yaml.nodes.MappingNode, deep: bool = False):
+    explicit_keys = set()
+    for key_node, _ in node.value:
+        if key_node.tag == "tag:yaml.org,2002:merge":
+            continue
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            duplicate = key in explicit_keys
+            explicit_keys.add(key)
+        except TypeError as exc:
+            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
+                                                     "found unhashable key", key_node.start_mark) from exc
+        if duplicate:
+            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
+                                                     f"duplicate key {key!r}", key_node.start_mark)
+    loader.flatten_mapping(node)
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+        except TypeError as exc:
+            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
+                                                     "found unhashable key", key_node.start_mark) from exc
+    return mapping
+
+
+UniqueKeySafeLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
+
+
 def split_capture(data: bytes) -> tuple[bytes, bytes] | None:
     if not data.startswith(b"---\n"):
         return None
@@ -33,34 +68,30 @@ def split_capture(data: bytes) -> tuple[bytes, bytes] | None:
     return data[4:marker], data[marker + 5:]
 
 
-def parse_frontmatter(raw: bytes) -> tuple[dict[str, str], list[str]]:
-    errors: list[str] = []
+def parse_frontmatter(raw: bytes) -> tuple[dict[str, object], list[str]]:
     try:
         source = raw.decode("utf-8", errors="strict")
     except UnicodeDecodeError:
         return {}, ["frontmatter is not valid UTF-8"]
-    values: dict[str, str] = {}
-    for number, line in enumerate(source.splitlines(), start=1):
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        match = KEY_RE.fullmatch(line)
-        if not match:
-            errors.append(f"invalid YAML frontmatter at line {number}")
-            continue
-        key, value = match.groups()
-        if key in values:
-            errors.append(f"duplicate YAML frontmatter key: {key}")
-            continue
-        value = (value or "").strip()
-        if value.count('"') % 2 or value.count("'") % 2:
-            errors.append(f"unbalanced quote in YAML field: {key}")
-        if value.startswith(("[", "{")) and not (
-            (value.startswith("[") and value.endswith("]"))
-            or (value.startswith("{") and value.endswith("}"))
-        ):
-            errors.append(f"unbalanced flow value in YAML field: {key}")
-        values[key] = value.strip("\"'")
-    return values, errors
+    try:
+        values = yaml.load(source, Loader=UniqueKeySafeLoader)
+    except yaml.YAMLError as exc:
+        detail = exc.problem or str(exc)
+        return {}, [f"invalid YAML frontmatter: {detail}"]
+    if not isinstance(values, dict) or any(not isinstance(key, str) for key in values):
+        return {}, ["YAML frontmatter must be a mapping with string keys"]
+    return values, []
+
+
+def scalar_text(value: object) -> str:
+    if isinstance(value, datetime):
+        rendered = value.isoformat()
+        return rendered[:-6] + "Z" if rendered.endswith("+00:00") else rendered
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        return value.strip()
+    return ""
 
 
 def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
@@ -83,27 +114,27 @@ def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
     values, yaml_errors = parse_frontmatter(frontmatter)
     errors.extend(yaml_errors)
     for key in REQUIRED:
-        if not values.get(key):
+        if not scalar_text(values.get(key, "")):
             errors.append(f"frontmatter field is missing or empty: {key}")
     for key in ("supplied_url", "canonical_url"):
-        value = values.get(key, "")
+        value = scalar_text(values.get(key, ""))
         if value and not re.match(r"^https?://\S+$", value):
             errors.append(f"{key} must be an absolute HTTP(S) URL")
-    if values.get("canonical_url") and values.get("source") != values.get("canonical_url"):
+    if values.get("canonical_url") and scalar_text(values.get("source")) != scalar_text(values.get("canonical_url")):
         errors.append("source must equal canonical_url for legacy triage compatibility")
-    published = values.get("published_at", "")
+    published = scalar_text(values.get("published_at", ""))
     if published and published != "unknown":
         try:
             date.fromisoformat(published)
         except ValueError:
             errors.append("published_at must be an ISO date or unknown")
-    clipped = values.get("clipped", "")
+    clipped = scalar_text(values.get("clipped", ""))
     if clipped:
         try:
             date.fromisoformat(clipped)
         except ValueError:
             errors.append("clipped must be an ISO date")
-    retrieved_at = values.get("retrieved_at", "")
+    retrieved_at = scalar_text(values.get("retrieved_at", ""))
     if retrieved_at:
         try:
             timestamp = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
@@ -113,10 +144,10 @@ def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
             errors.append("retrieved_at must be an ISO-8601 timestamp with timezone")
         if not retrieved_at.endswith("Z"):
             errors.append("retrieved_at must end in Z")
-    status = values.get("capture_status", "")
+    status = scalar_text(values.get("capture_status", ""))
     if status and status not in STATUSES:
         errors.append("capture_status must be complete, partial, shell, or failed")
-    capture_hash = values.get("content_sha256", "")
+    capture_hash = scalar_text(values.get("content_sha256", ""))
     if capture_hash and not HASH_RE.fullmatch(capture_hash):
         errors.append("content_sha256 must be a 64-character hexadecimal SHA-256")
     if capture_hash and HASH_RE.fullmatch(capture_hash):
@@ -132,7 +163,7 @@ def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
             errors.append("complete capture must contain exactly one H1")
         if ERROR_SHELL_RE.search(body[:8192]):
             errors.append("error/challenge page cannot be marked as a complete source")
-        http_status = values.get("source_http_status", "")
+        http_status = scalar_text(values.get("source_http_status", ""))
         if http_status and (not http_status.isdigit() or not 200 <= int(http_status) < 300):
             errors.append("complete capture requires a successful source HTTP status")
     if errors:
