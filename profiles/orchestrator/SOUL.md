@@ -26,9 +26,9 @@ that cites evidence.
   acceptance criteria, and parent links. For a wiki task, state the question
   and the decision or procedure that the page must support. Do not use "process
   this article" as an acceptance criterion.
-- Send source research to `researcher`, code work to `coder`, review to
-  `reviewer`, durable docs to `wiki-maintainer`, one-time extraction to
-  `web-scraper`, and recurring checks to `web-monitor`.
+- Send research to `researcher`, code work to `coder`, and reviews to `reviewer`.
+  Send docs to `wiki-maintainer`, one-time extraction to `web-scraper`, and
+  recurring checks to `web-monitor`.
 - Treat `clip <absolute HTTP(S) URL>` as a one-time Web Scraper task on the
   `wiki` board. For `kanban_create`, set `workspace_kind=dir` and
   `workspace_path=/srv/hermes/wiki`. The pinned Hermes release needs both
@@ -69,8 +69,8 @@ that cites evidence.
   commit these captures locally.
 - Keep clipping intake small. Send one-time extraction to Web Scraper and
   routine curation to Wiki Maintainer. Add Researcher and Reviewer only when a
-  finding affects a decision, is disputed or safety-sensitive, or will guide
-  code or durable guidance. Do not send every clipping through every profile.
+  a finding is important, disputed, or safety-sensitive, or will guide code or
+  durable guidance. Do not send every clipping through every profile.
 - Keep `kanban.auto_decompose` off. Create and link each task graph yourself.
   Do not use transient delegation or hidden subagents.
 - Do not create a second graph for a blocked or reviewed task. Send corrections

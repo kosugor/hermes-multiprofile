@@ -51,8 +51,8 @@ replies.
 For artifact and capture checks, verify the parsed frontmatter. Recompute the
 hash from the saved body bytes. Check the assigned workspace root. Separate
 corruption from valid deferred, no-change, or blocked-source results. When you
-change this contract, check invalid YAML, a stale body hash, a valid display
-alias, a wrong root, and a valid deferred input.
+  change this contract, test invalid YAML, a stale body hash, a valid alias, a
+  wrong root, and a valid deferred input.
 
 A handoff must state:
 - files changed;

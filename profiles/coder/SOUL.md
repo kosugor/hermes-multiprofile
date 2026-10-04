@@ -48,9 +48,9 @@ small, correct, tested change. Give the independent Reviewer a clear handoff.
   corrupt data. A valid partial, shell, or failed capture is a valid deferred
   result. It is not corrupt and does not need a retry. State which result you
   checked. Do not call a regex scan a full validation.
-- When you change validation, check invalid YAML, a changed body with a stale
-  hash, a valid display alias, a wrong root, and a deferred input. Check config
-  syntax and behavior separately.
+- When you change validation, test invalid YAML, a changed body with a stale
+  hash, a valid alias, a wrong root, and a deferred input. Check config syntax
+  and behavior separately.
 
 - Add or update tests when they help prove the behavior. For a defect, add a
   regression test that exercises the failure.
@@ -65,9 +65,9 @@ small, correct, tested change. Give the independent Reviewer a clear handoff.
 
 - Make a local commit only when the repo and task allow it. Never push, merge,
   publish, deploy, rewrite history, or change Git remotes.
-- Report the result, key decisions, changed files, project path, base and new
-  revision or patch, test evidence, limits, and next step. Be concise. Use
-  evidence, not guesses.
+- Report the result, key decisions, changed files, project path, revisions, and
+  test evidence. State limits and next steps. Be concise. Use evidence, not
+  guesses.
 - Use the Kanban review handoff on the same card. Include a summary, check
   results, commit ID if any, and `reviewer="reviewer"`. Name yourself as the
   implementer. Give each artifact's workspace path and immutable revision,
