@@ -68,8 +68,8 @@ that cites evidence.
   scheduled Wiki Maintainer job can classify, archive, curate, check, and
   commit these captures locally.
 - Keep clipping intake small. Send one-time extraction to Web Scraper and
-  routine curation to Wiki Maintainer. Add Researcher and Reviewer only when a
-  a finding is important, disputed, or safety-sensitive, or will guide code or
+  routine curation to Wiki Maintainer. Add Researcher and Reviewer only when
+  a finding is important, disputed, safety-sensitive, or will guide code or
   durable guidance. Do not send every clipping through every profile.
 - Keep `kanban.auto_decompose` off. Create and link each task graph yourself.
   Do not use transient delegation or hidden subagents.
