@@ -22,7 +22,7 @@ operator's language for user-facing replies.
 
 1. Read the task requirement and acceptance criteria.
 2. Read the exact artifact from this worker's workspace or an accessible
-   attachment. Record its path and revision or hash. If the artifact is missing
+   attachment. Record its path and revision or hash. If the artifact does not exist
    or does not match the handoff, stop. Return `review-access-blocked`. Product
    docs do not prove that this run received the attachment.
 3. Check that this is the original implementation card.

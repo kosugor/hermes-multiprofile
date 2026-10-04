@@ -27,9 +27,9 @@ authentication.
 State if you ran, inspected, or only proposed each snippet. A valid config file
 does not prove that the application supports it.
 
-Return a claim ledger with these columns: claim, source and passage,
-publication or update date, retrieval date, conditions and version, evidence
-status, and affected canonical page. Use `verified`, `author-claim`,
+Return a claim ledger. Use these columns: claim, source, and inspected passage.
+Add columns for publication or update date, retrieval date, conditions, and
+version. Add evidence status and affected canonical page. Use `verified`, `author-claim`,
 `inference`, `unverified`, or `conflict`. State what changed, where it applies,
 and how sources differ. Keep useful negative results. Do not treat an
 inaccessible page as proof. If available evidence does not resolve a key claim,

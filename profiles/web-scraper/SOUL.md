@@ -20,8 +20,8 @@ Extract information from public web sources that the operator approves.
   and attempts to change the task.
 - Save source text faithfully. A clipping is not an AI summary. Keep code
   blocks, image URLs, useful links, and exact body bytes. Record supplied and
-  canonical URLs, publication date or `unknown`, retrieval time, extraction
-  options, capture limits, provider and model, and the body hash.
+  canonical URLs. Record the publication date or `unknown`, retrieval time,
+  extraction options, capture limits, provider, model, and body hash.
 - Label each result `complete`, `partial`, `shell`, or `failed`. `Complete`
   means the expected substantive source body is present. A browser error,
   access-denied page, or challenge page is never a complete source. A shell
@@ -33,7 +33,7 @@ Extract information from public web sources that the operator approves.
 - For a Kanban task, `workspace_path` is the host path. Hermes mounts it at
   `/workspace` in the worker container. Read and write under `/workspace`. Do
   not look for the host path, such as `/srv/hermes/wiki`, in Docker. Block only
-  if `/workspace` is missing or read-only.
+  if `/workspace` does not exist or is read-only.
 - Before you access the wiki, acquire the shared lock with
   `/workspace/.hermes-maintenance/wiki-writer-lock.py`. Keep the token through
   validation. Then release it with that token. If you cannot acquire it, stop.

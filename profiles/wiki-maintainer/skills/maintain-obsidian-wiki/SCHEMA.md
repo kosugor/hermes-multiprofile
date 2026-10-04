@@ -23,8 +23,9 @@ links on pages under `hubs/`. Hubs do not need a claim ledger.
 - **Evidence ledger:** Add a `## Evidence ledger` table. Use these columns in
   this order: `Claim`, `Source / inspected passage`, `Published / updated`,
   `Retrieved`, `Scope / version`, `Status`, and `Affected / updated page`.
-  Give every data row a source URL or wiki link, publication date or `unknown`,
-  retrieval date, scope, status, and affected page. Use `this page` when needed.
+  Give every data row a source URL or wiki link. Include its publication date
+  or `unknown`, retrieval date, scope, status, and affected page. Use `this page`
+  when needed.
   The validator checks the table structure and values. It cannot prove a claim
   or check that a source supports it.
 

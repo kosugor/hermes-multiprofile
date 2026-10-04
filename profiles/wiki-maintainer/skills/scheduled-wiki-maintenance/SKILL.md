@@ -41,8 +41,8 @@ The topic wikis are `investments`, `devops`, `software-development`, and `ai`.
 For each inbox clipping, follow these steps:
 
 1. Accept current captures and older Markdown clippings. A current capture must
-   include supplied and canonical source URLs, UTC `retrieved_at`, a valid
-   `capture_status`, and a `content_sha256` that matches its saved body bytes.
+   include supplied and canonical source URLs, UTC `retrieved_at`, and a valid
+   `capture_status`. Its `content_sha256` must match its saved body bytes.
    Valid statuses are `complete`, `partial`, `shell`, and `failed`. Defer a
    valid partial capture. Use the evidence-only process below for a shell or
    failed capture.

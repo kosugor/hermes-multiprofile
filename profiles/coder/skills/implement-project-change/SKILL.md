@@ -22,7 +22,7 @@ format unrelated files, upgrade dependencies, or change public APIs. Never use
 `reset --hard` or `clean` to remove workspace changes.
 
 Run the smallest relevant checks that the offline environment supports. If a
-dependency is missing, name it and run any possible static checks. Do not
+dependency is not available, name it and run any possible static checks. Do not
 change Docker settings. Do not claim a check passed when it did not run. The
 offline environment blocks network-dependent checks. Do not call a blocked
 check an application defect.
