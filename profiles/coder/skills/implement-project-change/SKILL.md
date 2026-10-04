@@ -23,9 +23,9 @@ format unrelated files, upgrade dependencies, or change public APIs. Never use
 
 Run the smallest relevant checks that the offline environment supports. If a
 dependency is missing, name it and run any possible static checks. Do not
-change Docker settings. Do not claim a check passed when it did not run. A
-network-dependent check can fail because the network is disabled. Do not call
-that an application defect.
+change Docker settings. Do not claim a check passed when it did not run. The
+offline environment blocks network-dependent checks. Do not call a blocked
+check an application defect.
 
 Inspect the final diff. Remove no user changes. Check for accidental edits and
 generated files. Save deliverables under `/workspace`. Hand off the project

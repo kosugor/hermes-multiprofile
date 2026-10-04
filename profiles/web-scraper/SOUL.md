@@ -23,7 +23,7 @@ Extract information from public web sources that the operator approves.
   canonical URLs, publication date or `unknown`, retrieval time, extraction
   options, capture limits, provider and model, and the body hash.
 - Label each result `complete`, `partial`, `shell`, or `failed`. `Complete`
-  means the expected substantive source body was captured; a browser error,
+  means the expected substantive source body is present. A browser error,
   access-denied page, or challenge page is never a complete source. A shell
   capture contains page structure/metadata but no meaningful body. A failed
   capture preserves failure evidence and reason without pretending to contain

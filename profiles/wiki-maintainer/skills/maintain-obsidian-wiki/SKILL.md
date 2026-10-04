@@ -46,10 +46,9 @@ not create a Git repo or commit by default. Check aliases and related topics to
 avoid duplicate notes.
 
 Make focused edits. For a rename or link change, use `audit-vault-links`
-before and after the edit. Write a temporary file beside its target. Validate
-it before you replace the target. Do not delete notes or attachments during
-deduplication unless the task authorizes deletion and you have checked all
-references.
+before and after the edit. Write a temporary file beside its target. Check it
+before you replace the target. Do not remove notes or attachments during
+deduplication unless the task authorizes removal and you checked all references.
 
 Report created, changed, and moved paths. Report sources, checks, and unresolved
 conflicts. Tell Orchestrator which notes changed so its QMD process can refresh

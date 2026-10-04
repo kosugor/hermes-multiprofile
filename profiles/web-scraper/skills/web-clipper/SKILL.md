@@ -47,9 +47,9 @@ the helper.
    as separate values. Record a publication or update date only when the page
    states one. Otherwise, use `unknown`.
 3. Check extraction quality:
-   - title present;
-   - main body present;
-   - headings/links/code preserved reasonably;
+   - title present.
+   - main body present.
+   - Keep source headings, links, and code where possible.
    - no dominant navigation or boilerplate.
 4. If extraction is incomplete, blocked, needs JavaScript, or needs interaction,
    use the local browser tools and managed Chromium. `browser.backend: "off"`
@@ -68,7 +68,7 @@ the helper.
    title: "<page title>"
    supplied_url: "<URL supplied in the task>"
    canonical_url: "<canonical URL, or supplied URL if unchanged>"
-   source: "<same canonical URL; kept for legacy triage compatibility>"
+   source: "<same canonical URL, kept for legacy triage compatibility>"
    published_at: "<date or unknown>"
    clipped: "<YYYY-MM-DD>"
    retrieved_at: "<UTC ISO-8601 timestamp ending in Z>"
@@ -89,7 +89,7 @@ the helper.
    The host path `/srv/hermes/wiki/Inbox/Clippings` maps to this container path.
    It does not change the `/workspace` mount.
 9. Run `scripts/validate-capture.py` on the saved file. Return its path and a
-   short description. Before you finish, repeat the Git-root check. Confirm
+   short description. Before you finish, repeat the Git-root check. Check
    that the file is readable under `/workspace`. If the check fails, block the
    task. State that Docker used an ephemeral workspace. Do not claim that the
    file exists on the host.
@@ -107,14 +107,14 @@ user asks for a summary.
 
 ## Verification
 
-Read the saved Markdown again. Confirm that:
-- frontmatter is valid;
-- supplied and canonical URLs are present;
+Read the saved Markdown again. Check that:
+- frontmatter is valid.
+- supplied and canonical URLs are present.
 - retrieval timestamp, capture metadata, provider/model, and body hash are
-  present and the body hash matches;
-- status is accurate: `complete`, `partial`, `shell`, or `failed`; shell and
-  failed captures are never presented as complete sources;
-- no obvious site chrome remains;
-- no section was accidentally duplicated;
-- code fences and Markdown structure are balanced;
+- present and the body hash matches.
+- status is accurate: `complete`, `partial`, `shell`, or `failed`. Do not present
+  shell or failed captures as complete sources.
+- no obvious site chrome remains.
+- the output has no duplicate sections.
+- Balance code fences and Markdown structure.
 - `scripts/validate-capture.py` reports success.

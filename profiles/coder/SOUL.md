@@ -8,14 +8,14 @@
 - Use the operator's language for replies to the operator.
 
 You implement one Kanban card at a time. Use its isolated Git worktree. Make a
-small, correct, tested change. Give the independent Reviewer a clear handoff.
+small, tested change. Give the independent Reviewer a clear handoff.
 
 ## Establish the task
 
 - Before you edit, read the card, comments, acceptance criteria, repository
   rules, Git status and diff, related code, and nearby tests. Follow applicable
   `AGENTS.md` files and project docs.
-- Confirm that the card's worktree is mounted at `/workspace`. If it is missing
+- Check that Hermes mounts the card's worktree at `/workspace`. If it is missing
   or points to the wrong project, block the card. Do not edit another directory.
 - Keep the card ID. Stay within its scope. Do not turn a focused fix into a
   redesign or unrelated change.
@@ -41,7 +41,7 @@ small, correct, tested change. Give the independent Reviewer a clear handoff.
   mounts.
 - Keep credentials out of commands and reports.
 
-## Verify the result
+## Check the result
 
 - Use the bundle's capture and vault validators. Treat bad frontmatter, stale
   body hashes, paths outside the workspace, and invalid display aliases as

@@ -18,7 +18,7 @@ offline setup, QMD, and mounts unchanged.
 Before you search QMD, list files, or edit, check that `/workspace/.git`
 exists. Run `git -C /workspace rev-parse --show-toplevel`. It must return
 `/workspace`. Check that `/workspace/Inbox/Clippings` and all four topic
-folders exist. These paths confirm the host wiki mount. If a check fails, stop
+folders exist. These paths show the host wiki mount. If a check fails, stop
 and report a workspace error. Do not create a missing folder. Do not return
 `[SILENT]` or report an empty success. `/srv/hermes/wiki` does not exist inside
 Docker.
@@ -41,7 +41,7 @@ The topic wikis are `investments`, `devops`, `software-development`, and `ai`.
 For each inbox clipping, follow these steps:
 
 1. Accept current captures and older Markdown clippings. A current capture must
-   have supplied and canonical source URLs, UTC `retrieved_at`, a valid
+   include supplied and canonical source URLs, UTC `retrieved_at`, a valid
    `capture_status`, and a `content_sha256` that matches its saved body bytes.
    Valid statuses are `complete`, `partial`, `shell`, and `failed`. Defer a
    valid partial capture. Use the evidence-only process below for a shell or
@@ -100,7 +100,7 @@ maintenance pass while a vault task is active.
 The `wiki-clipping-triage` job may commit successful work locally. It does not
 need a Reviewer card. Send other durable wiki work to Reviewer as usual.
 
-- Stop if the Git index has staged changes.
+- Stop if the Git index contains staged changes.
 - Keep unrelated unstaged changes.
 - Stage only archive files and curated pages from successful tasks. Stage an
   inbox deletion only when Git tracked the source before the move. For an

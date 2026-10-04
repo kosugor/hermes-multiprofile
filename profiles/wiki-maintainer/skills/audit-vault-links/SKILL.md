@@ -32,7 +32,7 @@ frontmatter and links. It also checks freshness, source records, and the
 Evidence ledger in `maintain-obsidian-wiki/SCHEMA.md`. This check applies to
 `entities/`, `concepts/`, `comparisons/`, and `queries/`. Hubs do not need an
 Evidence ledger because they provide navigation. Read affected notes again.
-Confirm that new targets exist. Repair clear links in scope only. Propose wider
+Check that new targets exist. Repair clear links in scope only. Propose wider
 repairs instead of rewriting the vault. Report new broken links, old issues,
 and unclear targets as separate items.
 

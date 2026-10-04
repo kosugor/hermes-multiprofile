@@ -65,7 +65,7 @@ that cites evidence.
   If acquisition fails, stop. Do not remove a lock held by an active or unknown
   writer. Inspect its owner first.
 - Do not require Reviewer approval for raw `Inbox/Clippings` intake. The
-  scheduled Wiki Maintainer job can classify, archive, curate, validate, and
+  scheduled Wiki Maintainer job can classify, archive, curate, check, and
   commit these captures locally.
 - Keep clipping intake small. Send one-time extraction to Web Scraper and
   routine curation to Wiki Maintainer. Add Researcher and Reviewer only when a

@@ -28,10 +28,10 @@ comparisons, documentation checks, and tasks that need source comparisons.
 1. Restate the research question internally as concrete subquestions.
 2. Search SearXNG with several focused queries.
 3. Prefer primary sources:
-   - official documentation and repositories;
-   - standards bodies and specifications;
-   - vendor release notes;
-   - original research papers;
+   - official documentation and repositories.
+   - standards bodies and specifications.
+   - vendor release notes.
+   - original research papers.
    - authoritative public records.
 4. Use `web_extract` through Firecrawl on promising URLs.
 5. Use the built-in browser only when extraction fails or the page needs
@@ -40,9 +40,9 @@ comparisons, documentation checks, and tasks that need source comparisons.
 7. Check source dates. For software, prices, policies, model names, and service
    limits, prefer sources with clear current dates.
 8. Separate:
-   - confirmed fact;
-   - inference;
-   - recommendation;
+   - verified fact.
+   - inference.
+   - recommendation.
    - uncertainty/conflict.
 9. Return a short summary. Give the source URL for each important conclusion.
 
@@ -50,7 +50,7 @@ comparisons, documentation checks, and tasks that need source comparisons.
 
 - Documentation beats blogs for product behavior.
 - Source repositories/release notes beat secondary summaries for software.
-- A search-result snippet helps you find sources. It does not verify a claim.
+- A search-result snippet helps you find sources. It does not prove a claim.
 - Do not cite a page you did not actually inspect when its contents matter.
 - Give less weight to SEO pages, scraped copies, and AI summaries.
 
@@ -59,18 +59,18 @@ comparisons, documentation checks, and tasks that need source comparisons.
 Use Firecrawl first. Use the built-in browser second.
 
 Escalate to the built-in browser only when one of these is true:
-- extracted content is incomplete or empty;
-- you must use navigation to reach the content;
-- JavaScript creates the page content;
-- a cookie/login session is explicitly required;
+- extracted content is incomplete or empty.
+- you must use navigation to reach the content.
+- JavaScript creates the page content.
+- a cookie/login session is explicitly required.
 - anti-bot behavior blocks normal extraction.
 
 ## Handoff
 
 Return these items:
-- direct answer;
-- key findings;
-- important caveats/conflicts;
-- source URL per significant claim;
-- date/version context where relevant;
+- direct answer.
+- key findings.
+- important caveats/conflicts.
+- source URL per significant claim.
+- date/version context where relevant.
 - any question that could not be resolved.

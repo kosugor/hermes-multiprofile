@@ -27,7 +27,7 @@ Maintain the local Git wiki in the workspace that Kanban assigns to you.
 - Run available link and frontmatter checks. Inspect the final diff. You may
   commit locally. Do not push or publish.
 - Send ordinary durable wiki changes to Reviewer through Kanban. The scheduled
-  `wiki-clipping-triage` job is an exception. It may validate paths and make
+  `wiki-clipping-triage` job is an exception. It may check paths and make
   one local commit for a successful run. It does not need a Reviewer card.
 - Before QMD search or wiki access, acquire the shared lock with
   `/workspace/.hermes-maintenance/wiki-writer-lock.py`. Keep its token through

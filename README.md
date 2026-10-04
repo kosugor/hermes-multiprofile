@@ -6,7 +6,7 @@ and every model-controlled terminal session.
 
 ## Architecture
 
-| Canonical profile | Display role | Model | Fallback policy |
+| Canonical profile | Role label | Model | Fallback policy |
 | --- | --- | --- | --- |
 | `orchestrator` | Orchestrator | `openai-codex/gpt-5.6-sol` | fail closed |
 | `researcher` | Researcher | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
@@ -34,15 +34,16 @@ accept that setting in this release. Orchestrator also uses the narrow legacy
 setting `toolsets: [kanban]`. Gateway preflight requires it. Remove it only
 after a reviewed Hermes upgrade includes the upstream fix.
 
-Only Coder uses the profile-local `hermes-lcm` context engine. It is pinned to
+Only Coder uses the profile-local `hermes-lcm` context engine. The deployment
+pins it to
 `v1.0.0-rc.1` at commit `8d1b1e6d3d63f5fc7b209e8d7ec1dc9b814f2e54`. Raw
 messages and the summary DAG stay in Coder's profile. The normal Hermes state
 backup includes them.
 
 Memory is role-scoped. Orchestrator, Researcher, Coder, and Wiki Maintainer use
 profile memory. Reviewer, Web Scraper, and Web Monitor have no memory. This
-keeps reviews independent and monitor state file-based. No cloud or shared
-memory service is set. Profiles with Langfuse use the bundled plugin in
+keeps reviews independent and monitor state file-based. We set no cloud or
+shared memory service. Profiles with Langfuse use the bundled plugin in
 metadata-only mode. Each profile has its own environment label. The plugin
 adds no model-callable tools. Wiki Maintainer and Web Scraper's clipping skill
 do not use Langfuse.
@@ -68,7 +69,7 @@ On Ampere A1, QMD uses the packaged ARM64 node-llama-cpp CPU backend. A local
 test found a native KleidiAI build slower for this wiki's semantic queries. The
 production setup does not enable it.
 
-Hermes `execute_code` is disabled. File and shell tools use a temporary Docker
+Hermes disables `execute_code`. File and shell tools use a temporary Docker
 container with no network. Only Researcher, Reviewer, Web Scraper, and Web
 Monitor can use the `web` tool. It calls local SearXNG and Firecrawl services.
 These three profiles also use Hermes' built-in browser tools and local headless
@@ -88,7 +89,7 @@ test packages use a date-pinned Debian snapshot.
   pinned to Hermes `v2026.9.11` / package `0.21.2` and commit
   `939e45c91d751fadd94dcd1b873ac3cb44846213`.
 - A Telegram bot token and the numeric Telegram ID of its sole operator.
-- ChatGPT OAuth access for `openai-codex`; an OpenRouter key is optional but
+- ChatGPT OAuth access for `openai-codex`. An OpenRouter key is optional but
   required for the configured free fallback.
 
 ## Install
@@ -220,7 +221,7 @@ MONITOR_MATERIALITY='new release, security advisory, or breaking change' \
 Use `MONITOR_SCHEMA` instead of or with `MONITOR_SELECTOR` when the monitor
 needs a reviewed structured extract.
 
-Inspect the monitor. Run it by hand. Resume it only after you confirm the
+Inspect the monitor. Run it by hand. Resume it only after you check the
 baseline and Telegram delivery:
 
 ```bash
@@ -268,7 +269,7 @@ If an old Orchestrator prompt made a blocked scratch card, archive it. Redeploy
 the profile, restart the gateway, and send `/new`. Then retry. This Hermes
 release cannot change workspace kind or path with `kanban edit`.
 
-If a correct `dir:/srv/hermes/wiki` card blocks because the worker looks for the
+If a valid `dir:/srv/hermes/wiki` card blocks because the worker looks for the
 host path in Docker, deploy the updated Web Scraper profile. Before you unblock
 the card, add a comment. State that Docker mounts the host path at `/workspace`.
 State that this rule replaces any request to expose `/srv/hermes/wiki` in
@@ -374,6 +375,6 @@ Hermes.
 For Hermes, choose a tested release tag. Preview
 `scripts/upgrade-hermes.sh --tag <tag>`. Then run it with `--apply`. The script
 refuses a dirty checkout. It saves a backup and installs from the detached tag.
-It validates the install. If install or validation fails, it restores the old
+It checks the install. If the install or check fails, it restores the old
 commit. Set `APPROVED_HERMES_TAG=<tag>` for later bootstrap and validation runs.
 Never run Compose with floating tags.

@@ -30,10 +30,10 @@ replies.
 7. Diagnose failures from local evidence. Ask Researcher to answer external
    dependency or API questions. This profile has no web access.
 8. Before you report completion:
-   - inspect `git diff`;
-   - confirm that no unrelated files changed;
-   - run relevant format, lint, and type checks;
-   - run tests;
+   - inspect `git diff`.
+   - check that no unrelated files changed.
+   - run relevant format, lint, and type checks.
+   - run tests.
    - report commands and results.
 9. Hand off the diff and verification evidence for independent review.
 
@@ -48,15 +48,15 @@ replies.
 
 ## Verification
 
-For artifact and capture checks, verify the parsed frontmatter. Recompute the
+For artifact and capture checks, check the parsed frontmatter. Recompute the
 hash from the saved body bytes. Check the assigned workspace root. Separate
 corruption from valid deferred, no-change, or blocked-source results. When you
   change this contract, test invalid YAML, a stale body hash, a valid alias, a
   wrong root, and a valid deferred input.
 
 A handoff must state:
-- files changed;
-- behavior change;
-- tests/checks executed;
-- failures or skipped checks;
+- files changed.
+- behavior change.
+- tests or checks executed.
+- failures or skipped checks.
 - remaining risks or next steps.

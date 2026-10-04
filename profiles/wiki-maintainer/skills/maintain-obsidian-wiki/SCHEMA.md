@@ -99,5 +99,5 @@ Start with these questions:
 3. Which model API fits this task and budget? Which price and capability claims
    have evidence?
 
-Confirm that default results point to canonical pages. Select `wiki-evidence`
-for one query. Confirm that only this query returns raw sources.
+Check that default results point to canonical pages. Select `wiki-evidence`
+for one query. Check that only this query returns raw sources.
