@@ -268,8 +268,10 @@ class BundleTests(unittest.TestCase):
         self.assertIn("extraction-up)", compose_script)
         self.assertIn("extraction-stop)", compose_script)
 
-    def test_dashboard_and_web_ports_are_loopback_only(self):
-        self.assertIn("dashboard --host 127.0.0.1 --port 9119", read("systemd/hermes-dashboard.service.in"))
+    def test_dashboard_uses_configurable_tailscale_host_and_web_ports_stay_loopback(self):
+        dashboard = read("systemd/hermes-dashboard.service.in")
+        self.assertIn("EnvironmentFile=-%h/.config/hermes/dashboard.env", dashboard)
+        self.assertIn("--host ${HERMES_DASHBOARD_HOST} --port 9119", dashboard)
         compose = read("infra/compose.yaml")
         self.assertNotIn('"0.0.0.0:8888:', compose)
         self.assertNotIn('"0.0.0.0:3002:', compose)

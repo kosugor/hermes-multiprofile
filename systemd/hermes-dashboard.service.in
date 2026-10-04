@@ -8,7 +8,9 @@ Requires=hermes-gateway.service
 Type=simple
 Environment=DOCKER_HOST=unix:///run/user/%U/docker.sock
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=@HERMES_BIN@ -p orchestrator dashboard --host 127.0.0.1 --port 9119 --no-open
+Environment=HERMES_DASHBOARD_HOST=127.0.0.1
+EnvironmentFile=-%h/.config/hermes/dashboard.env
+ExecStart=@HERMES_BIN@ -p orchestrator dashboard --host ${HERMES_DASHBOARD_HOST} --port 9119 --no-open
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

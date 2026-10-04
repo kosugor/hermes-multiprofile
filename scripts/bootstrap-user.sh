@@ -117,6 +117,19 @@ install_profile_files() {
     fi
     cp -a -- "$source/skills" "$destination/skills"
   fi
+  local shared_skill_source="$repo_root/profiles/shared/skills/asd-ste100"
+  local shared_skill_destination="$destination/skills/asd-ste100"
+  if [[ -d "$shared_skill_source" ]]; then
+    mkdir -p "$destination/skills"
+    if [[ -e "$shared_skill_destination" ]] \
+      && ! diff -qr -- "$shared_skill_source" "$shared_skill_destination" >/dev/null; then
+      mv -- "$shared_skill_destination" \
+        "$shared_skill_destination.pre-hermes-deployment.${timestamp}"
+    fi
+    if [[ ! -e "$shared_skill_destination" ]]; then
+      cp -a -- "$shared_skill_source" "$shared_skill_destination"
+    fi
+  fi
   if [[ ! -e "$destination/.env" ]]; then
     install -m 0600 "$repo_root/profiles/$name/.env.example" "$destination/.env"
   else

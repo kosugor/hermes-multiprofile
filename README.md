@@ -112,7 +112,10 @@ Bootstrap is idempotent. It installs the pinned Hermes release under
 It creates seven profiles. Before it replaces a profile config or skill pack,
 it saves a backup. It builds the sandbox image, pulls each image at its
 committed ARM64 digest, and installs user systemd units. Each profile opts out
-of bundled skills. Bootstrap installs each reviewed profile skill pack.
+of bundled skills. Bootstrap installs each reviewed profile skill pack and the
+shared `asd-ste100` skill in all seven profiles. The shared skill source and
+its references, examples, and linter are stored in
+[`profiles/shared/skills/asd-ste100`](profiles/shared/skills/asd-ste100).
 Bootstrap does not create or overwrite secrets.
 
 Bootstrap installs the reviewed LCM release at
@@ -178,14 +181,21 @@ All profiles use subscription-backed ChatGPT OAuth from the root Hermes auth
 store. The Codex allowance has a quota. It is not OpenAI API credit. Run
 `hermes auth status` to check it. This bundle does not set `OPENAI_API_KEY`.
 
-The dashboard listens only on `127.0.0.1:9119`. From a workstation:
+The dashboard listens on the VPS's Tailscale IPv4 address at port `9119`.
+Configure the address before restarting the dashboard:
 
 ```bash
-ssh -L 9119:127.0.0.1:9119 hermes@your-vps
+install -d -m 0700 ~/.config/hermes
+printf 'HERMES_DASHBOARD_HOST=%s\n' "$(tailscale ip -4 | head -n 1)" \
+  > ~/.config/hermes/dashboard.env
+chmod 0600 ~/.config/hermes/dashboard.env
+systemctl --user daemon-reload
+systemctl --user restart hermes-dashboard.service
 ```
 
-Then open `http://127.0.0.1:9119` on your workstation. You can use the same SSH
-tunnel with a Tailscale address. Keep the dashboard bound to loopback.
+Open `http://<vps-tailscale-ip>:9119` from a device on the tailnet. Keep access
+limited through your Tailscale access policy. SearXNG and Firecrawl remain bound
+to loopback.
 
 ## Host egress guard
 

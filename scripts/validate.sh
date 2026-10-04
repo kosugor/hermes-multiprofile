@@ -198,12 +198,22 @@ run_check "web systemd service is active" systemctl --user is-active --quiet her
 run_check "QMD index timer is active" systemctl --user is-active --quiet hermes-qmd-index.timer
 run_check "QMD embed timer is active" systemctl --user is-active --quiet hermes-qmd-embed.timer
 
-unexpected_listeners=$(ss -H -lnt | awk '
-  $4 ~ /:(3002|8888|9119)$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print }
+tailscale_ip=$(tailscale ip -4 2>/dev/null | head -n 1 || true)
+dashboard_listener=$(ss -H -lnt | awk '$4 ~ /:9119$/ { print $4 }')
+if [[ -n $tailscale_ip && $dashboard_listener == "$tailscale_ip:9119" ]]; then
+  pass "dashboard listens on the Tailscale IPv4 address"
+else
+  fail "dashboard listens on the Tailscale IPv4 address"
+  printf 'Tailscale IPv4: %s\nDashboard listener: %s\n' \
+    "${tailscale_ip:-unavailable}" "${dashboard_listener:-none}" >&2
+fi
+
+unexpected_web_listeners=$(ss -H -lnt | awk '
+  $4 ~ /:(3002|8888)$/ && $4 !~ /^127\.0\.0\.1:/ && $4 !~ /^\[::1\]:/ { print }
 ')
-[[ -z $unexpected_listeners ]] && pass "dashboard and web APIs have no public listeners" || {
-  fail "dashboard and web APIs have no public listeners"
-  printf '%s\n' "$unexpected_listeners" >&2
+[[ -z $unexpected_web_listeners ]] && pass "web APIs listen only on loopback" || {
+  fail "web APIs listen only on loopback"
+  printf '%s\n' "$unexpected_web_listeners" >&2
 }
 
 searx_response=$(curl --fail --silent --show-error --max-time 30 \
