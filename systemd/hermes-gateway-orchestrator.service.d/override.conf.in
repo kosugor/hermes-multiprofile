@@ -1,3 +1,9 @@
+[Unit]
+# Re-starting the orchestrator after a dependency failure must also recover
+# the dashboard. The dashboard already has After= and Requires= on this unit,
+# so this does not create a start-order cycle.
+Wants=hermes-dashboard.service
+
 [Service]
 # Run orchestrator as an independent gateway. Its profile home is the
 # primary home; the default gateway owns the default Telegram session.

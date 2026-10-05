@@ -93,6 +93,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("gateway_service=hermes-gateway.service", bootstrap)
         self.assertIn("hermes-gateway-orchestrator.service", bootstrap)
         self.assertIn("gateway-preflight.sh", gateway_dropin)
+        self.assertIn("Wants=hermes-dashboard.service", gateway_dropin)
         self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator dashboard", dashboard)
 
     def test_openai_runtime_is_explicitly_auto(self):

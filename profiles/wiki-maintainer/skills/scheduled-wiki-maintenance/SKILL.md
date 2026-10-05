@@ -23,12 +23,24 @@ and report a workspace error. Do not create a missing folder. Do not return
 `[SILENT]` or report an empty success. `/srv/hermes/wiki` does not exist inside
 Docker.
 
+Inside the cron Docker container, use `/workspace` for every wiki path. Do not
+search or read `/home/hermes/.hermes/profiles/wiki-maintainer`, `/srv/hermes/wiki`,
+or other host-only profile paths from the container. Use `/workspace/.hermes-maintenance`
+for maintenance scripts, checkpoints, reports, and backups.
+
 Before you search QMD or access the wiki, acquire the lock with
-`python3 /workspace/.hermes-maintenance/wiki-writer-lock.py acquire --owner
-cron:wiki-clipping-triage`. Keep the token through validation and commit.
+`python3 /workspace/.hermes-maintenance/wiki-writer-lock.py --wiki-root
+/workspace acquire --owner cron:wiki-clipping-triage`. Keep the token through
+validation and commit.
 Then release the lock with that token. If you cannot acquire it, report its
 owner and stop. Never remove a lock only because it is old. Kanban, Web Scraper,
 and cron use this helper and wiki mount.
+
+Do not use heredocs, `python -c`/`python -e`, shell-generated scripts, or other
+inline code in cron terminal calls. Use the existing scripts under
+`/workspace/.hermes-maintenance/` or ordinary file and Git commands. If an
+operation needs new logic, stop and report it instead of bypassing the cron
+execution policy.
 
 Use `/workspace/.hermes-maintenance/` for atomic checkpoints and dated reports.
 Do not index this directory or `.hermes-backups`. At the start, save the list
