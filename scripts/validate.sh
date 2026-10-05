@@ -136,6 +136,17 @@ for profile in "${expected[@]}"; do
     fail "$profile shared asd-ste100 skill is current"
   fi
 done
+
+kanban_workspace_skill_source="$repo_root/profiles/shared/skills/hermes-kanban-workspaces"
+for profile in orchestrator reviewer wiki-maintainer web-scraper; do
+  kanban_workspace_skill_target="$hermes_home/profiles/$profile/skills/hermes-kanban-workspaces"
+  if [[ -d "$kanban_workspace_skill_source" && -d "$kanban_workspace_skill_target" ]] \
+    && diff -qr -- "$kanban_workspace_skill_source" "$kanban_workspace_skill_target" >/dev/null; then
+    pass "$profile shared hermes-kanban-workspaces skill is current"
+  else
+    fail "$profile shared hermes-kanban-workspaces skill is current"
+  fi
+done
 web_scraper_config="$hermes_home/profiles/web-scraper/config.yaml"
 if grep -Fxq '  docker_mount_cwd_to_workspace: true' "$web_scraper_config" \
   && grep -Fxq '  container_persistent: true' "$web_scraper_config" \

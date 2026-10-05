@@ -151,6 +151,21 @@ install_profile_files() {
       cp -a -- "$shared_skill_source" "$shared_skill_destination"
     fi
   fi
+  if [[ $name == orchestrator || $name == reviewer || $name == wiki-maintainer || $name == web-scraper ]]; then
+    local kanban_skill_source="$repo_root/profiles/shared/skills/hermes-kanban-workspaces"
+    local kanban_skill_destination="$destination/skills/hermes-kanban-workspaces"
+    if [[ -d "$kanban_skill_source" ]]; then
+      mkdir -p "$destination/skills"
+      if [[ -e "$kanban_skill_destination" ]] \
+        && ! diff -qr -- "$kanban_skill_source" "$kanban_skill_destination" >/dev/null; then
+        mv -- "$kanban_skill_destination" \
+          "$kanban_skill_destination.pre-hermes-deployment.${timestamp}"
+      fi
+      if [[ ! -e "$kanban_skill_destination" ]]; then
+        cp -a -- "$kanban_skill_source" "$kanban_skill_destination"
+      fi
+    fi
+  fi
   if [[ ! -e "$destination/.env" ]]; then
     install -m 0600 "$repo_root/profiles/$name/.env.example" "$destination/.env"
   else
