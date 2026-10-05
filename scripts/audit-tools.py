@@ -89,7 +89,7 @@ EXPECTED_SKILLS = {
     "coder": {"asd-ste100", "coding-workflow", "diagnose-and-fix", "implement-project-change"},
     "reviewer": {"asd-ste100", "hermes-kanban-workspaces", "independent-review", "sdlc-review", "wiki-content-review"},
     "wiki-maintainer": {"asd-ste100", "audit-vault-links", "hermes-kanban-workspaces", "maintain-obsidian-wiki", "scheduled-wiki-maintenance", "wiki-content-quality"},
-    "web-scraper": {"asd-ste100", "hermes-kanban-workspaces", "web-clipper"},
+    "web-scraper": {"asd-ste100", "hermes-kanban-workspaces", "web-clipper", "reddit-thread-clipper"},
     "web-monitor": {"asd-ste100", "manage-web-watchlist", "run-web-monitor"},
 }
 QMD_PROFILE = "wiki-maintainer"

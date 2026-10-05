@@ -59,7 +59,9 @@ Profile-local skills are installed from the repository during bootstrap. The
 Wiki Maintainer receives `maintain-obsidian-wiki`, `audit-vault-links`,
 `scheduled-wiki-maintenance`, and `wiki-content-quality`. Reviewer receives
 `independent-review`, `sdlc-review`, and `wiki-content-review`. Web Scraper receives
-`web-clipper`. The shared `asd-ste100` skill is copied to every profile.
+`web-clipper` and `reddit-thread-clipper`, which preserve supplied Reddit post and
+comment-thread context with capture limitations. The shared `asd-ste100` skill
+is copied to every profile.
 `hermes-kanban-workspaces` is shared only with Orchestrator, Reviewer, Wiki
 Maintainer, and Web Scraper because those profiles route or execute Kanban work.
 Orchestrator also receives `wiki-task-coordination` to serialize wiki writers and
