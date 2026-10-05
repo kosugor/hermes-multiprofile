@@ -55,6 +55,12 @@ curated wiki titles and prose in Serbian. Keep raw clippings and quotes in their
 source language. Keep required wiki labels and metadata unchanged. See
 [`profiles/WRITING-STANDARD.md`](profiles/WRITING-STANDARD.md).
 
+Profile-local skills are installed from the repository during bootstrap. The
+Wiki Maintainer receives `maintain-obsidian-wiki`, `audit-vault-links`,
+`scheduled-wiki-maintenance`, and `wiki-content-quality`. Reviewer receives
+`independent-review` and `wiki-content-review`. Web Scraper receives
+`web-clipper`. The shared `asd-ste100` skill is copied to every profile.
+
 Only Wiki Maintainer gets read-only QMD `2.8.3` tools for `/srv/hermes/wiki`.
 Checksums pin QMD, its dependencies, and three GGUF model files. QMD runs on the
 host in stdio mode. It exposes query, retrieval, and status tools only. Default

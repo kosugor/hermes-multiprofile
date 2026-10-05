@@ -101,6 +101,41 @@ done
 for profile in "${expected[@]}"; do
   run_check "config check: $profile" hermes -p "$profile" config check
 done
+
+check_profile_skills() {
+  local profile=$1
+  local source_dir="$repo_root/profiles/$profile/skills"
+  local installed_dir="$hermes_home/profiles/$profile/skills"
+  if [[ ! -d "$source_dir" ]]; then
+    pass "$profile has no profile-local skill pack"
+    return
+  fi
+  [[ -d "$installed_dir" ]] || { fail "$profile installed skill directory exists"; return; }
+  local source_file relative
+  while IFS= read -r source_file; do
+    relative=${source_file#"$source_dir"/}
+    if [[ -f "$installed_dir/$relative" ]]; then
+      pass "$profile skill file installed: $relative"
+    else
+      fail "$profile skill file installed: $relative"
+    fi
+  done < <(find "$source_dir" -type f -print | sort)
+}
+
+for profile in "${expected[@]}"; do
+  check_profile_skills "$profile"
+done
+
+shared_skill_source="$repo_root/profiles/shared/skills/asd-ste100"
+for profile in "${expected[@]}"; do
+  shared_skill_target="$hermes_home/profiles/$profile/skills/asd-ste100"
+  if [[ -d "$shared_skill_source" && -d "$shared_skill_target" ]] \
+    && diff -qr -- "$shared_skill_source" "$shared_skill_target" >/dev/null; then
+    pass "$profile shared asd-ste100 skill is current"
+  else
+    fail "$profile shared asd-ste100 skill is current"
+  fi
+done
 web_scraper_config="$hermes_home/profiles/web-scraper/config.yaml"
 if grep -Fxq '  docker_mount_cwd_to_workspace: true' "$web_scraper_config" \
   && grep -Fxq '  container_persistent: true' "$web_scraper_config" \
