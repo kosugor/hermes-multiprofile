@@ -84,13 +84,13 @@ REQUIRED_DISABLED_TOOLSETS = {
 }
 AGENT_SCHEDULING_PROFILE = "web-monitor"
 EXPECTED_SKILLS = {
-    "orchestrator": set(),
-    "researcher": {"deep-web-research", "verify-research-claims"},
-    "coder": {"coding-workflow", "diagnose-and-fix", "implement-project-change"},
-    "reviewer": {"independent-review"},
-    "wiki-maintainer": {"audit-vault-links", "maintain-obsidian-wiki", "scheduled-wiki-maintenance"},
-    "web-scraper": {"web-clipper"},
-    "web-monitor": {"manage-web-watchlist", "run-web-monitor"},
+    "orchestrator": {"asd-ste100"},
+    "researcher": {"asd-ste100", "deep-web-research", "verify-research-claims"},
+    "coder": {"asd-ste100", "coding-workflow", "diagnose-and-fix", "implement-project-change"},
+    "reviewer": {"asd-ste100", "independent-review"},
+    "wiki-maintainer": {"asd-ste100", "audit-vault-links", "maintain-obsidian-wiki", "scheduled-wiki-maintenance"},
+    "web-scraper": {"asd-ste100", "web-clipper"},
+    "web-monitor": {"asd-ste100", "manage-web-watchlist", "run-web-monitor"},
 }
 QMD_PROFILE = "wiki-maintainer"
 QMD_TOOLS = {"query", "get", "multi_get", "status"}

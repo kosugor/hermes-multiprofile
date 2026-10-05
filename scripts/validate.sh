@@ -11,6 +11,9 @@ web_mode=full
 failures=0
 export PATH="$hermes_home/node/bin:$HOME/.local/bin:$PATH"
 export AGENT_BROWSER_EXECUTABLE_PATH="$hermes_home/bin/chromium"
+# Ubuntu AppArmor disables unprivileged Chromium namespaces on this VPS.
+# Keep the override configurable while retaining the reviewed default.
+export AGENT_BROWSER_ARGS="${AGENT_BROWSER_ARGS:---no-sandbox}"
 
 usage() {
   echo "Usage: $0 [--offline] [--core-web] [--soak-hours N | --no-soak]" >&2
