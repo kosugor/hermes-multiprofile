@@ -58,7 +58,7 @@ source language. Keep required wiki labels and metadata unchanged. See
 Profile-local skills are installed from the repository during bootstrap. The
 Wiki Maintainer receives `maintain-obsidian-wiki`, `audit-vault-links`,
 `scheduled-wiki-maintenance`, and `wiki-content-quality`. Reviewer receives
-`independent-review` and `wiki-content-review`. Web Scraper receives
+`independent-review`, `sdlc-review`, and `wiki-content-review`. Web Scraper receives
 `web-clipper`. The shared `asd-ste100` skill is copied to every profile.
 
 Only Wiki Maintainer gets read-only QMD `2.8.3` tools for `/srv/hermes/wiki`.
