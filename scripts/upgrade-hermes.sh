@@ -60,19 +60,21 @@ sync_managed_environment() {
 }
 
 "$repo_root/scripts/backup.sh"
-systemctl --user stop hermes-dashboard.service hermes-gateway.service
+gateway_service=hermes-gateway.service
+orchestrator_gateway_service=hermes-gateway-orchestrator.service
+systemctl --user stop hermes-dashboard.service "$gateway_service" "$orchestrator_gateway_service"
 upgrade_succeeded=0
 
 rollback() {
   local status=$?
   if (( upgrade_succeeded == 0 )); then
     echo "Hermes upgrade failed; restoring commit $current_commit." >&2
-    systemctl --user stop hermes-dashboard.service hermes-gateway.service || true
+    systemctl --user stop hermes-dashboard.service "$gateway_service" "$orchestrator_gateway_service" || true
     git -C "$checkout" checkout --detach "$current_commit" || true
     git -C "$checkout" submodule update --init --recursive || true
     sync_managed_environment || true
   fi
-  systemctl --user start hermes-gateway.service hermes-dashboard.service || true
+  systemctl --user start "$gateway_service" "$orchestrator_gateway_service" hermes-dashboard.service || true
   exit "$status"
 }
 trap rollback EXIT
@@ -98,7 +100,7 @@ for profile in orchestrator researcher coder reviewer wiki-maintainer web-scrape
   hermes -p "$profile" config check
 done
 APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/verify-hermes-pin.sh"
-systemctl --user start hermes-gateway.service hermes-dashboard.service
+systemctl --user start "$gateway_service" "$orchestrator_gateway_service" hermes-dashboard.service
 APPROVED_HERMES_TAG="$tag" "$repo_root/scripts/validate.sh" --no-soak
 upgrade_succeeded=1
 trap - EXIT

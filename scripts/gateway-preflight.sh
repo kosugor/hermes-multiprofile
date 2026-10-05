@@ -9,10 +9,16 @@ orchestrator_config="$hermes_home/profiles/orchestrator/config.yaml"
 [[ -f $env_file ]] || { echo "Gateway secret file is missing: $env_file" >&2; exit 1; }
 [[ $(stat -c '%a' "$env_file") == 600 ]] || { echo "$env_file must have mode 0600." >&2; exit 1; }
 [[ -f $orchestrator_config ]] || { echo "Orchestrator config is missing: $orchestrator_config" >&2; exit 1; }
-grep -Eq '^toolsets:[[:space:]]*\[kanban\][[:space:]]*$' "$orchestrator_config" || {
+if ! awk '
+  /^toolsets:[[:space:]]*\[[[:space:]]*kanban[[:space:]]*\][[:space:]]*$/ { found=1 }
+  /^toolsets:[[:space:]]*$/ {
+    if (getline next_line > 0 && next_line ~ /^[[:space:]]*-[[:space:]]*kanban[[:space:]]*$/) found=1
+  }
+  END { exit found ? 0 : 1 }
+' "$orchestrator_config"; then
   echo "The pinned Hermes release requires top-level toolsets: [kanban] for orchestrator sessions." >&2
   exit 1
-}
+fi
 
 dotenv_value() {
   local key=$1

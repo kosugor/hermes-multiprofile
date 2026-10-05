@@ -5,6 +5,8 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 hermes_home=${HERMES_HOME:-$HOME/.hermes}
 hermes_checkout=${HERMES_CHECKOUT:-$hermes_home/hermes-agent}
 sandbox_image=hermes-sandbox:2026.09.11
+gateway_service=hermes-gateway.service
+orchestrator_gateway_service=hermes-gateway-orchestrator.service
 soak_hours=0
 online=1
 web_mode=full
@@ -195,7 +197,8 @@ expected_containers=7
   && pass "$web_mode web-stack containers are running" \
   || fail "$web_mode web-stack containers are running (found $running_count)"
 
-run_check "gateway systemd service is active" systemctl --user is-active --quiet hermes-gateway.service
+run_check "gateway systemd service is active" systemctl --user is-active --quiet "$gateway_service"
+run_check "orchestrator gateway systemd service is active" systemctl --user is-active --quiet "$orchestrator_gateway_service"
 run_check "dashboard systemd service is active" systemctl --user is-active --quiet hermes-dashboard.service
 run_check "web systemd service is active" systemctl --user is-active --quiet hermes-web.service
 run_check "QMD index timer is active" systemctl --user is-active --quiet hermes-qmd-index.timer

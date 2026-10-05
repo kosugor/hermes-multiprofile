@@ -52,14 +52,8 @@ platform_toolsets:
   cron: [kanban, clarify, todo, memory, session_search]
 
 gateway:
-  multiplex_profiles: true
-  multiplex_profile_allowlist:
-    - researcher
-    - coder
-    - reviewer
-    - wiki-maintainer
-    - web-scraper
-    - web-monitor
+  multiplex_profiles: false
+  multiplex_profile_allowlist: []
   trust_env: false
 
 kanban:

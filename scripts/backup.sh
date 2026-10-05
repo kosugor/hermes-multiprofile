@@ -9,6 +9,8 @@ archive="$backup_root/hermes-state-$timestamp.tar.gz"
 stage=$(mktemp -d "${TMPDIR:-/tmp}/hermes-backup.XXXXXX")
 gateway_was_active=0
 dashboard_was_active=0
+gateway_service=hermes-gateway.service
+orchestrator_gateway_service=hermes-gateway-orchestrator.service
 
 cleanup() {
   local status=$?
@@ -17,7 +19,10 @@ cleanup() {
     *) echo "Refusing to remove unexpected staging path: $stage" >&2 ;;
   esac
   if (( gateway_was_active )); then
-    systemctl --user start hermes-gateway.service || true
+    systemctl --user start "$gateway_service" || true
+  fi
+  if (( orchestrator_was_active )); then
+    systemctl --user start "$orchestrator_gateway_service" || true
   fi
   if (( dashboard_was_active )); then
     systemctl --user start hermes-dashboard.service || true
@@ -53,9 +58,14 @@ if systemctl --user is-active --quiet hermes-dashboard.service; then
   dashboard_was_active=1
   systemctl --user stop hermes-dashboard.service
 fi
-if systemctl --user is-active --quiet hermes-gateway.service; then
+if systemctl --user is-active --quiet "$gateway_service"; then
   gateway_was_active=1
-  systemctl --user stop hermes-gateway.service
+  systemctl --user stop "$gateway_service"
+fi
+orchestrator_was_active=0
+if systemctl --user is-active --quiet "$orchestrator_gateway_service"; then
+  orchestrator_was_active=1
+  systemctl --user stop "$orchestrator_gateway_service"
 fi
 
 mkdir -p "$stage/home" "$stage/srv/hermes" "$stage/deployment/infra"

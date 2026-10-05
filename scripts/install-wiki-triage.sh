@@ -27,6 +27,14 @@ fi
   echo "Wiki root must be a Git repository for automatic triage commits: $wiki_root" >&2
   exit 1
 }
+wiki_lock="$wiki_root/.hermes-maintenance/wiki-writer.lock"
+if [[ -e $wiki_lock && ! -d $wiki_lock ]]; then
+  [[ -f $wiki_lock && ! -s $wiki_lock ]] || {
+    echo "Refusing to replace a non-directory wiki writer lock: $wiki_lock" >&2
+    exit 1
+  }
+  rm -f -- "$wiki_lock"
+fi
 install -d -m 0750 "$wiki_root/.hermes-maintenance"
 install -m 0644 "$repo_root/scripts/wiki-writer-lock.py" \
   "$wiki_root/.hermes-maintenance/wiki-writer-lock.py"

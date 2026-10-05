@@ -1,0 +1,8 @@
+[Service]
+# Run orchestrator as an independent gateway. Its profile home is the
+# primary home; the default gateway owns the default Telegram session.
+ExecStart=
+ExecStart=%h/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run --force --external-supervisor
+WorkingDirectory=%h/.hermes/profiles/orchestrator
+Environment="HERMES_HOME=%h/.hermes/profiles/orchestrator"
+ExecStartPre=/usr/bin/env HERMES_HOME=%h/.hermes @DEPLOY_DIR@/scripts/gateway-preflight.sh

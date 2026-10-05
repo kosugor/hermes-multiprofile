@@ -1,8 +1,8 @@
 [Unit]
 Description=Hermes private web dashboard
 Wants=network-online.target
-After=network-online.target hermes-gateway.service
-Requires=hermes-gateway.service
+After=network-online.target hermes-gateway-orchestrator.service
+Requires=hermes-gateway-orchestrator.service
 
 [Service]
 Type=simple

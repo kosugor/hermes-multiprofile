@@ -29,6 +29,19 @@ if [[ ! -S $user_runtime_dir/bus ]] || ! systemctl --user show-environment >/dev
   echo "Run scripts/install-host.sh as root if needed, then log in directly as $(id -un) and retry." >&2
   exit 1
 fi
+
+# SSH login shells do not always receive the address of the existing user bus.
+# Keep systemctl --user usable after login and after a host reboot.
+if ! grep -Fq '# Hermes deployment: systemd user bus' "$HOME/.bashrc" 2>/dev/null; then
+  cat >> "$HOME/.bashrc" <<'EOF'
+
+# Hermes deployment: systemd user bus
+if [ -S "/run/user/$(id -u)/bus" ]; then
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+fi
+EOF
+fi
 [[ $(uname -m) == aarch64 || $(uname -m) == arm64 ]] || { echo "ARM64 is required." >&2; exit 1; }
 [[ -e /sys/fs/cgroup/cgroup.controllers ]] || { echo "cgroup v2 is required." >&2; exit 1; }
 # shellcheck disable=SC1091
@@ -88,6 +101,14 @@ if [[ ! -d /srv/hermes/wiki/.git ]]; then
   git -C /srv/hermes/wiki init
   git -C /srv/hermes/wiki config user.name "Hermes Wiki Maintainer"
   git -C /srv/hermes/wiki config user.email "hermes-wiki@localhost"
+fi
+wiki_lock=/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock
+if [[ -e $wiki_lock && ! -d $wiki_lock ]]; then
+  [[ -f $wiki_lock && ! -s $wiki_lock ]] || {
+    echo "Refusing to replace a non-directory wiki writer lock: $wiki_lock" >&2
+    exit 1
+  }
+  rm -f -- "$wiki_lock"
 fi
 install -d -m 0750 /srv/hermes/wiki/.hermes-maintenance
 install -m 0644 "$repo_root/scripts/wiki-writer-lock.py" \
@@ -195,22 +216,48 @@ source "$repo_root/infra/images.lock.env"
 docker build --platform linux/arm64 --build-arg BASE_IMAGE="$SANDBOX_BASE_IMAGE" \
   -t "$sandbox_tag" "$repo_root/images/hermes-sandbox"
 
+hermes_bin="$hermes_home/hermes-agent/venv/bin/hermes"
+[[ -x $hermes_bin ]] || { echo "Managed Hermes launcher is missing: $hermes_bin" >&2; exit 1; }
+
+# Let Hermes generate its native gateway unit. Keep deployment policy in a
+# drop-in so `hermes gateway status/restart` recognizes the service.
 unit_dir="$HOME/.config/systemd/user"
-mkdir -p "$unit_dir"
+# Install the native default gateway without copying or modifying the built-in
+# default profile files or its .env.
+"$hermes_bin" gateway install --force --no-start-now
+gateway_service=hermes-gateway.service
 escaped_root=${repo_root//&/\\&}
 escaped_root=${escaped_root//\//\\/}
-hermes_bin=$(command -v hermes)
-escaped_hermes=${hermes_bin//&/\\&}
-escaped_hermes=${escaped_hermes//\//\\/}
+default_dropin="$unit_dir/${gateway_service}.d"
+mkdir -p "$default_dropin"
+sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" \
+  "$repo_root/systemd/hermes-gateway.service.d/override.conf.in" \
+  > "$default_dropin/override.conf"
+# Install the second native profile unit. Hermes currently emits the profile
+# home in HERMES_HOME and also emits --profile, which double-prefixes the
+# profile path at runtime. Normalize the unit to the root home; --profile then
+# selects the orchestrator secrets and configuration.
+"$hermes_bin" -p orchestrator gateway install --force --no-start-now
+orchestrator_service=hermes-gateway-orchestrator.service
+orchestrator_unit="$unit_dir/$orchestrator_service"
+sed -i \
+  -e "s|^WorkingDirectory=.*|WorkingDirectory=$hermes_home|" \
+  -e "s|^Environment=\"HERMES_HOME=.*\"|Environment=\"HERMES_HOME=$hermes_home\"|" \
+  -e 's| gateway run$| gateway run --force --external-supervisor|' \
+  "$orchestrator_unit"
+orchestrator_dropin="$unit_dir/${orchestrator_service}.d"
+mkdir -p "$orchestrator_dropin"
+sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" \
+  "$repo_root/systemd/hermes-gateway-orchestrator.service.d/override.conf.in" \
+  > "$orchestrator_dropin/override.conf"
 for unit in \
   hermes-web.service \
-  hermes-gateway.service \
   hermes-dashboard.service \
   hermes-qmd-index.service \
   hermes-qmd-index.timer \
   hermes-qmd-embed.service \
   hermes-qmd-embed.timer; do
-  sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" -e "s/@HERMES_BIN@/${escaped_hermes}/g" \
+  sed -e "s/@DEPLOY_DIR@/${escaped_root}/g" \
     "$repo_root/systemd/${unit}.in" > "$unit_dir/$unit"
 done
 systemctl --user daemon-reload

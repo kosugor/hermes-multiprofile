@@ -1,0 +1,4 @@
+[Service]
+# The default bot owns only its own Telegram session. The orchestrator
+# gateway owns the deployment worker profiles and their separate token.
+Environment=GATEWAY_MULTIPLEX_PROFILES=false

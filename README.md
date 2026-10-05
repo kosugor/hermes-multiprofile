@@ -116,7 +116,9 @@ of bundled skills. Bootstrap installs each reviewed profile skill pack and the
 shared `asd-ste100` skill in all seven profiles. The shared skill source and
 its references, examples, and linter are stored in
 [`profiles/shared/skills/asd-ste100`](profiles/shared/skills/asd-ste100).
-Bootstrap does not create or overwrite secrets.
+Bootstrap does not create or overwrite secrets. It adds an idempotent block to
+`~/.bashrc` so SSH login shells export the existing systemd user bus address for
+`systemctl --user`.
 
 Bootstrap installs the reviewed LCM release at
 `~/.hermes/profiles/coder/plugins/hermes-lcm`. An existing checkout must be

@@ -80,15 +80,19 @@ class BundleTests(unittest.TestCase):
 
     def test_bootstrap_does_not_touch_builtin_default_profile(self):
         bootstrap = read("scripts/bootstrap-user.sh")
-        self.assertNotIn("default", bootstrap)
+        self.assertNotIn('"$hermes_home/profiles/default"', bootstrap)
+        self.assertNotIn('hermes -p default', bootstrap)
         self.assertIn('expected_profiles=(orchestrator ', bootstrap)
         self.assertIn('local destination="$hermes_home/profiles/$name"', bootstrap)
         self.assertNotIn('destination=$hermes_home', bootstrap)
 
-        gateway = read("systemd/hermes-gateway.service.in")
+        bootstrap = read("scripts/bootstrap-user.sh")
+        gateway_dropin = read("systemd/hermes-gateway-orchestrator.service.d/override.conf.in")
         dashboard = read("systemd/hermes-dashboard.service.in")
-        self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace", gateway)
-        self.assertIn("Environment=HERMES_BIN=%h/.hermes/hermes-agent/venv/bin/hermes", gateway)
+        self.assertIn("gateway install --force --no-start-now", bootstrap)
+        self.assertIn("gateway_service=hermes-gateway.service", bootstrap)
+        self.assertIn("hermes-gateway-orchestrator.service", bootstrap)
+        self.assertIn("gateway-preflight.sh", gateway_dropin)
         self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator dashboard", dashboard)
 
     def test_openai_runtime_is_explicitly_auto(self):
@@ -279,7 +283,6 @@ class BundleTests(unittest.TestCase):
     def test_qmd_indexer_is_local_and_resource_limited(self):
         service = read("systemd/hermes-qmd-index.service.in")
         timer = read("systemd/hermes-qmd-index.timer.in")
-        gateway = read("systemd/hermes-gateway.service.in")
         bootstrap = read("scripts/bootstrap-user.sh")
         self.assertIn("QMD_CONFIG_DIR=%h/.hermes/profiles/wiki-maintainer/qmd", service)
         self.assertIn("QMD_FORCE_CPU=1", service)
@@ -294,8 +297,6 @@ class BundleTests(unittest.TestCase):
         self.assertIn("CPUQuota=50%", embed_service)
         self.assertIn("MemoryMax=3G", embed_service)
         self.assertIn("OnCalendar=*-*-* 02:30:00", embed_timer)
-        self.assertIn("%h/.cache/qmd", gateway)
-        self.assertIn("Environment=TZ=Europe/Belgrade", gateway)
         self.assertIn("hermes-qmd-index.timer", bootstrap)
         self.assertIn("hermes-qmd-embed.timer", bootstrap)
 
@@ -487,6 +488,8 @@ class BundleTests(unittest.TestCase):
         self.assertIn('DBUS_SESSION_BUS_ADDRESS="unix:path=$user_runtime_dir/bus"', bootstrap)
         self.assertIn("systemctl --user show-environment", bootstrap)
         self.assertIn("Log in directly", bootstrap)
+        self.assertIn("Hermes deployment: systemd user bus", bootstrap)
+        self.assertIn('export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"', bootstrap)
 
     def test_hermes_installer_is_release_and_checksum_pinned(self):
         installer = read("scripts/install-hermes.sh")
@@ -559,7 +562,7 @@ class BundleTests(unittest.TestCase):
     def test_backup_quiesces_both_writers(self):
         backup = read("scripts/backup.sh")
         dashboard_stop = backup.index("systemctl --user stop hermes-dashboard.service")
-        gateway_stop = backup.index("systemctl --user stop hermes-gateway.service")
+        gateway_stop = backup.index('systemctl --user stop "$gateway_service"')
         self.assertLess(dashboard_stop, gateway_stop)
         self.assertIn("dashboard_was_active", backup)
         self.assertIn('/srv/hermes/artifacts "$stage/srv/hermes/artifacts"', backup)
@@ -573,6 +576,7 @@ class BundleTests(unittest.TestCase):
         for script in ("scripts/bootstrap-user.sh", "scripts/install-wiki-triage.sh"):
             contents = read(script)
             self.assertIn("wiki-writer-lock.py", contents)
+            self.assertIn("Refusing to replace a non-directory wiki writer lock", contents)
             self.assertIn("/.hermes-maintenance/", contents)
         for profile_path in (
             "profiles/web-scraper/skills/web-clipper/SKILL.md",
@@ -617,9 +621,11 @@ class BundleTests(unittest.TestCase):
         self.assertTrue((ROOT / "profiles" / "wiki-maintainer" / "skills" / "audit-vault-links" / "scripts" / "wiki-audit.py").is_file())
 
     def test_gateway_has_fail_closed_preflight(self):
-        unit = read("systemd/hermes-gateway.service.in")
-        self.assertIn("ExecStartPre=@DEPLOY_DIR@/scripts/gateway-preflight.sh", unit)
-        self.assertIn("ExecStart=@HERMES_BIN@ -p orchestrator gateway run --replace", unit)
+        bootstrap = read("scripts/bootstrap-user.sh")
+        dropin = read("systemd/hermes-gateway-orchestrator.service.d/override.conf.in")
+        self.assertIn('gateway install --force --no-start-now', bootstrap)
+        self.assertIn('hermes-gateway-orchestrator.service.d', bootstrap)
+        self.assertIn("gateway-preflight.sh", dropin)
         preflight = read("scripts/gateway-preflight.sh")
         self.assertIn("TELEGRAM_ALLOWED_CHATS must equal the operator ID", preflight)
         self.assertIn("OPENAI_API_KEY is forbidden", preflight)
