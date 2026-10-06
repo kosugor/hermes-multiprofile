@@ -17,6 +17,8 @@ plugins:
     - hermes-lcm
     - observability/langfuse
 
+  disabled:
+    - hermes-lcm
 context:
   engine: lcm
 
@@ -60,3 +62,4 @@ worktree_sync: false
 
 skills:
   creation_nudge_interval: 0
+_config_version: 49

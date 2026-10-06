@@ -55,6 +55,6 @@ rm -f -- "$old_lock"
 
 cat <<'EOF'
 Web-service upgrade validated. Review and commit infra/images.lock.env. Hermes
-itself remains pinned; use scripts/upgrade-hermes.sh for a separately reviewed
-exact release tag.
+itself is managed independently; use scripts/install-hermes.sh to update it
+from the current upstream installer.
 EOF

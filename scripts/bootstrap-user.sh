@@ -63,7 +63,6 @@ command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
 "$repo_root/scripts/install-hermes.sh"
 export PATH="$HOME/.hermes/bin:$HOME/.local/bin:$PATH"
 command -v hermes >/dev/null 2>&1 || { echo "Hermes installation did not create ~/.local/bin/hermes." >&2; exit 1; }
-"$repo_root/scripts/verify-hermes-pin.sh"
 
 export DOCKER_HOST=${DOCKER_HOST:-unix:///run/user/$(id -u)/docker.sock}
 docker info >/dev/null
@@ -81,12 +80,6 @@ if grep -Eqi 'no (memory limit|cpu cfs quota) support' <<<"$docker_warnings"; th
   exit 1
 fi
 
-version_text=$(hermes --version 2>&1 || true)
-approved_tag=${APPROVED_HERMES_TAG:-v2026.9.11}
-if [[ $approved_tag == v2026.9.11 && $version_text != *"v2026.9.11"* && $version_text != *"0.21.2"* ]]; then
-  echo "Expected Hermes v2026.9.11 / 0.21.2; found: $version_text" >&2
-  exit 1
-fi
 
 install -d -m 0750 /srv/hermes/monitor /srv/hermes/monitor/monitoring
 for path in /srv/hermes/projects /srv/hermes/wiki /srv/hermes/monitor /srv/hermes/artifacts; do
@@ -125,13 +118,25 @@ install_profile_files() {
   local name=$1
   local destination="$hermes_home/profiles/$name" source="$repo_root/profiles/$name"
   mkdir -p "$destination"
-  for filename in config.yaml SOUL.md SKILLS.md; do
+  for filename in config.yaml SOUL.md; do
     [[ -f "$source/$filename" ]] || continue
     if [[ -f "$destination/$filename" ]] && ! cmp -s "$source/$filename" "$destination/$filename"; then
       cp -p -- "$destination/$filename" "$destination/${filename}.pre-hermes-deployment.${timestamp}"
     fi
     install -m 0644 "$source/$filename" "$destination/$filename"
   done
+  if [[ -d "$source/memories" ]]; then
+    mkdir -p "$destination/memories"
+    for filename in MEMORY.md USER.md; do
+      [[ -f "$source/memories/$filename" ]] || continue
+      if [[ -f "$destination/memories/$filename" ]] \
+        && ! cmp -s "$source/memories/$filename" "$destination/memories/$filename"; then
+        cp -p -- "$destination/memories/$filename" \
+          "$destination/memories/${filename}.pre-hermes-deployment.${timestamp}"
+      fi
+      install -m 0644 "$source/memories/$filename" "$destination/memories/$filename"
+    done
+  fi
   if [[ -d "$source/skills" ]]; then
     if [[ -d "$destination/skills" ]]; then
       mv -- "$destination/skills" "$destination/skills.pre-hermes-deployment.${timestamp}"

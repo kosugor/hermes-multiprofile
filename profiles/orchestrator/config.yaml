@@ -1,27 +1,15 @@
+model:
+  provider: openai-codex
+  default: gpt-6.1-sol
+  openai_runtime: auto
+  base_url: https://chatgpt.com/backend-api/codex
+toolsets:
+  - kanban
 database:
   journal_mode: wal
   synchronous: FULL
-
-model:
-  provider: openai-codex
-  default: gpt-5.6-sol
-  openai_runtime: auto
-
-plugins:
-  enabled:
-    - observability/langfuse
-
-context:
-  engine: compressor
-
-updates:
-  check: false
-  pre_update_backup: full
-  non_interactive_local_changes: stash
-
 agent:
   max_turns: 120
-  reasoning_effort: high
   verify_on_stop: false
   disabled_toolsets:
     - terminal
@@ -39,46 +27,74 @@ agent:
     - vision
     - image_gen
     - tts
-
-# Hermes v2026.9.11's Kanban registry gate still checks this legacy key even
-# when the effective per-platform allowlists below already include `kanban`.
-# Keep this narrow compatibility opt-in until the pinned release is upgraded.
-toolsets: [kanban]
-
-platform_toolsets:
-  cli: [kanban, clarify, todo, memory, session_search]
-  telegram: [kanban, clarify, todo, memory, session_search]
-  api_server: [kanban, clarify, todo, memory, session_search]
-  cron: [kanban, clarify, todo, memory, session_search]
-
-gateway:
-  multiplex_profiles: false
-  multiplex_profile_allowlist: []
-  trust_env: false
-
+  reasoning_effort: high
+context:
+  engine: compressor
+skills:
+  creation_nudge_interval: 0
+plugins:
+  enabled:
+    - observability/langfuse
+cron:
+  allow_agent_scheduling: false
+  preflight: true
+  max_parallel_jobs: 1
 kanban:
+  auto_subscribe_on_create: true
   dispatch_in_gateway: true
-  dispatch_interval_seconds: 60
   review_dispatch: true
-  # Matches SOUL.md: Orchestrator owns the explicit, linked graph.
-  auto_decompose: false
+  dispatch_interval_seconds: 60
   orchestrator_profile: orchestrator
   default_assignee: orchestrator
-  auto_subscribe_on_create: true
   max_in_progress: 1
   max_in_progress_per_profile: 1
+  auto_decompose: false
   auto_promote_children: true
-
-cron:
-  max_parallel_jobs: 1
-  preflight: true
-  allow_agent_scheduling: false
-
+gateway:
+  trust_env: false
+  multiplex_profiles: false
 sessions:
   auto_prune: true
   retention_days: 90
   vacuum_after_prune: true
   min_vacuum_interval_days: 30
-
-skills:
-  creation_nudge_interval: 0
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+_config_version: 49
+platform_toolsets:
+  cli:
+    - clarify
+    - connections
+    - kanban
+    - memory
+    - session_search
+    - todo
+  telegram:
+    - clarify
+    - connections
+    - kanban
+    - memory
+    - session_search
+    - todo
+  api_server:
+    - clarify
+    - connections
+    - kanban
+    - memory
+    - session_search
+    - todo
+  cron:
+    - clarify
+    - connections
+    - kanban
+    - memory
+    - session_search
+    - todo
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+dashboard:
+  theme: default-large

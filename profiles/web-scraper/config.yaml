@@ -28,13 +28,13 @@ agent:
   max_turns: 80
   reasoning_effort: medium
   verify_on_stop: false
-  disabled_toolsets: [computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, memory, session_search, vision, image_gen, tts]
+  disabled_toolsets: [computer_use, code_execution, delegation, messaging, cronjob, skills_hub, memory, session_search, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [web, browser, file, terminal]
-  telegram: [web, browser, file, terminal]
-  api_server: [web, browser, file, terminal]
-  cron: [web, browser, file, terminal]
+  cli: [web, browser, file, terminal, skills]
+  telegram: [web, browser, file, terminal, skills]
+  api_server: [web, browser, file, terminal, skills]
+  cron: [web, browser, file, terminal, skills]
 
 browser:
   # "off" disables Browser Use CLI; Hermes built-in local Chromium tools remain
@@ -84,3 +84,4 @@ web:
 
 skills:
   creation_nudge_interval: 0
+_config_version: 49

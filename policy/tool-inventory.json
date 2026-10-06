@@ -15,6 +15,7 @@
     "kanban_request_review",
     "kanban_show",
     "kanban_unblock",
+    "manage_connections",
     "memory",
     "session_search",
     "todo_list"
@@ -92,6 +93,9 @@
     "process_manage",
     "read_file",
     "search_files",
+    "skill_manage",
+    "skill_view",
+    "skills_list",
     "terminal",
     "write_file"
   ],
@@ -117,6 +121,9 @@
     "process_manage",
     "read_file",
     "search_files",
+    "skill_manage",
+    "skill_view",
+    "skills_list",
     "terminal",
     "web_extract",
     "web_search",

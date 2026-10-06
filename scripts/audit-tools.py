@@ -80,8 +80,9 @@ EXPECTED_PLUGINS = {
 }
 MEMORY_PROFILES = {"orchestrator", "researcher", "coder", "wiki-maintainer"}
 REQUIRED_DISABLED_TOOLSETS = {
-    "code_execution", "delegation", "messaging", "skills", "skills_hub",
+    "code_execution", "delegation", "messaging", "skills_hub",
 }
+SKILLS_ENABLED_PROFILES = {"wiki-maintainer", "web-scraper"}
 AGENT_SCHEDULING_PROFILE = "web-monitor"
 EXPECTED_SKILLS = {
     "orchestrator": {"asd-ste100", "hermes-kanban-workspaces", "wiki-task-coordination"},
@@ -89,7 +90,7 @@ EXPECTED_SKILLS = {
     "coder": {"asd-ste100", "coding-workflow", "diagnose-and-fix", "implement-project-change"},
     "reviewer": {"asd-ste100", "hermes-kanban-workspaces", "independent-review", "sdlc-review", "wiki-content-review"},
     "wiki-maintainer": {"asd-ste100", "audit-vault-links", "hermes-kanban-workspaces", "maintain-obsidian-wiki", "scheduled-wiki-maintenance", "wiki-content-quality"},
-    "web-scraper": {"asd-ste100", "hermes-kanban-workspaces", "web-clipper", "reddit-thread-clipper"},
+    "web-scraper": {"asd-ste100", "hermes-kanban-workspaces", "reddit-access", "web-clipper", "reddit-thread-clipper"},
     "web-monitor": {"asd-ste100", "manage-web-watchlist", "run-web-monitor"},
 }
 QMD_PROFILE = "wiki-maintainer"
@@ -184,6 +185,10 @@ def main() -> int:
                 f"{profile}: required disabled toolsets missing="
                 f"{sorted(REQUIRED_DISABLED_TOOLSETS - disabled)}"
             )
+        skills_enabled = "skills" not in disabled
+        if skills_enabled != (profile in SKILLS_ENABLED_PROFILES):
+            expected_state = "enabled" if profile in SKILLS_ENABLED_PROFILES else "disabled"
+            failures.append(f"{profile}: skills toolset must be {expected_state}")
         scheduling_enabled = profile == AGENT_SCHEDULING_PROFILE
         if ("cronjob" in disabled) == scheduling_enabled:
             failures.append(

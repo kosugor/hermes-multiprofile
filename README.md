@@ -8,7 +8,7 @@ and every model-controlled terminal session.
 
 | Canonical profile | Role label | Model | Fallback policy |
 | --- | --- | --- | --- |
-| `orchestrator` | Orchestrator | `openai-codex/gpt-5.6-sol` | fail closed |
+| `orchestrator` | Orchestrator | `openai-codex/gpt-6.1-sol` | fail closed |
 | `researcher` | Researcher | `openai-codex/gpt-5.6-terra` | OpenRouter free, then Nous free |
 | `coder` | Coder + profile-local LCM | `openai-codex/gpt-5.6-sol` | fail closed |
 | `reviewer` | Reviewer | `openai-codex/gpt-5.6-sol` | fail closed |
@@ -28,11 +28,10 @@ changed. Web Scraper, Kanban wiki tasks, and cron share one lock:
 `/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock`. Bootstrap installs the
 token-checking helper.
 
-Hermes `v2026.9.11` predates an upstream fix for Telegram Kanban grants. The
-grant uses `platform_toolsets.telegram`. The Kanban registry gate does not yet
-accept that setting in this release. Orchestrator also uses the narrow legacy
-setting `toolsets: [kanban]`. Gateway preflight requires it. Remove it only
-after a reviewed Hermes upgrade includes the upstream fix.
+The current Hermes checkout still requires the narrow legacy setting
+`toolsets: [kanban]` for the Orchestrator gateway. Keep it until a reviewed
+Hermes upgrade removes the compatibility requirement. The effective grants use
+`platform_toolsets.telegram` and include the current `connections` toolset.
 
 Only Coder uses the profile-local `hermes-lcm` context engine. The deployment
 pins it to
@@ -58,14 +57,16 @@ source language. Keep required wiki labels and metadata unchanged. See
 Profile-local skills are installed from the repository during bootstrap. The
 Wiki Maintainer receives `maintain-obsidian-wiki`, `audit-vault-links`,
 `scheduled-wiki-maintenance`, and `wiki-content-quality`. Reviewer receives
-`independent-review`, `sdlc-review`, and `wiki-content-review`. Web Scraper receives
-`web-clipper` and `reddit-thread-clipper`, which preserve supplied Reddit post and
-comment-thread context with capture limitations. The shared `asd-ste100` skill
+`independent-review`, `sdlc-review`, and `wiki-content-review`. Web Scraper receives `web-clipper`, `reddit-access`, and
+`reddit-thread-clipper`, which preserve supplied Reddit post and comment-thread
+context with capture limitations. The shared `asd-ste100` skill
 is copied to every profile.
 `hermes-kanban-workspaces` is shared only with Orchestrator, Reviewer, Wiki
 Maintainer, and Web Scraper because those profiles route or execute Kanban work.
 Orchestrator also receives `wiki-task-coordination` to serialize wiki writers and
-handle lock waits without repeated dispatch.
+handle lock waits without repeated dispatch. The local `skills` toolset is enabled
+only for Web Scraper and Wiki Maintainer; it provides skill listing, viewing, and
+management. `skills_hub` remains disabled in every profile.
 
 Only Wiki Maintainer gets read-only QMD `2.8.3` tools for `/srv/hermes/wiki`.
 Checksums pin QMD, its dependencies, and three GGUF model files. QMD runs on the
@@ -97,9 +98,8 @@ test packages use a date-pinned Debian snapshot.
 - At least 10 GiB RAM and 20 GiB free disk.
 - A dedicated `hermes` user with rootless Docker and systemd lingering.
   `scripts/install-host.sh` prepares the host.
-- Outbound HTTPS for bootstrap. The checksum-verified official installer is
-  pinned to Hermes `v2026.9.11` / package `0.21.2` and commit
-  `939e45c91d751fadd94dcd1b873ac3cb44846213`.
+- Outbound HTTPS for bootstrap and Hermes updates. Hermes is installed from
+  the current upstream installer without a repository-managed version pin.
 - A Telegram bot token and the numeric Telegram ID of its sole operator.
 - ChatGPT OAuth access for `openai-codex`. An OpenRouter key is optional but
   required for the configured free fallback.
@@ -118,13 +118,13 @@ Log in as `hermes`. Put this checkout at `~/hermes-deployment`. Then run:
 bash ./scripts/bootstrap-user.sh
 ```
 
-Bootstrap is idempotent. It installs the pinned Hermes release under
-`~/.hermes/hermes-agent`. It creates `/srv/hermes/projects`, `/srv/hermes/wiki`,
+Bootstrap is idempotent. It installs or updates Hermes from the current
+upstream installer under `~/.hermes/hermes-agent`. It creates `/srv/hermes/projects`, `/srv/hermes/wiki`,
 `/srv/hermes/monitor`, its `monitoring` folder, and `/srv/hermes/artifacts`.
-It creates seven profiles. Before it replaces a profile config or skill pack,
-it saves a backup. It builds the sandbox image, pulls each image at its
+It creates seven profiles. Before it replaces a profile config, soul, memory, or skill pack, it saves a
+backup. It builds the sandbox image, pulls each image at its
 committed ARM64 digest, and installs user systemd units. Each profile opts out
-of bundled skills. Bootstrap installs each reviewed profile skill pack and the
+of bundled skills. Bootstrap installs each reviewed profile skill pack and managed profile memory, and the
 shared `asd-ste100` skill in all seven profiles. The shared skill source and
 its references, examples, and linter are stored in
 [`profiles/shared/skills/asd-ste100`](profiles/shared/skills/asd-ste100).
@@ -396,9 +396,9 @@ Upgrade images by an explicit process. Edit `infra/images.sources.env`. Run
 image digests. Review and commit the new lock. This process does not upgrade
 Hermes.
 
-For Hermes, choose a tested release tag. Preview
-`scripts/upgrade-hermes.sh --tag <tag>`. Then run it with `--apply`. The script
-refuses a dirty checkout. It saves a backup and installs from the detached tag.
-It checks the install. If the install or check fails, it restores the old
-commit. Set `APPROVED_HERMES_TAG=<tag>` for later bootstrap and validation runs.
+Hermes updates are independent of this repository. Run
+`scripts/install-hermes.sh` whenever you want to install the current upstream
+Hermes version. The deployment bundle validates that the CLI is available but
+does not reject newer Hermes versions. `HERMES_INSTALLER_URL` can override the
+upstream installer URL for controlled environments.
 Never run Compose with floating tags.

@@ -36,7 +36,8 @@
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
     "kanban_show", "kanban_unblock", "memory", "mcp__qmd__get",
     "mcp__qmd__multi_get", "mcp__qmd__query", "mcp__qmd__status", "patch",
-    "process_manage", "read_file", "search_files", "terminal", "write_file"
+    "process_manage", "read_file", "search_files", "skill_manage", "skill_view",
+    "skills_list", "terminal", "write_file"
   ],
   "web-scraper": [
     "browser_back", "browser_cdp", "browser_click", "browser_console",
@@ -48,7 +49,8 @@
     "kanban_comment", "kanban_complete", "kanban_create", "kanban_heartbeat",
     "kanban_link", "kanban_list", "kanban_request_changes", "kanban_request_review",
     "kanban_show", "kanban_unblock", "patch", "process_manage", "read_file",
-    "search_files", "terminal", "web_extract", "web_search", "write_file"
+    "search_files", "skill_manage", "skill_view", "skills_list", "terminal",
+    "web_extract", "web_search", "write_file"
   ],
   "web-monitor": [
     "browser_back", "browser_cdp", "browser_click", "browser_console",

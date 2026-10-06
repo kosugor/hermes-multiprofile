@@ -30,13 +30,13 @@ agent:
   max_turns: 100
   reasoning_effort: medium
   verify_on_stop: true
-  disabled_toolsets: [browser, web, computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
+  disabled_toolsets: [browser, web, computer_use, code_execution, delegation, messaging, cronjob, skills_hub, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [file, terminal, memory]
-  telegram: [file, terminal, memory]
-  api_server: [file, terminal, memory]
-  cron: [file, terminal, memory]
+  cli: [file, terminal, memory, skills]
+  telegram: [file, terminal, memory, skills]
+  api_server: [file, terminal, memory, skills]
+  cron: [file, terminal, memory, skills]
 
 mcp_servers:
   qmd:
@@ -77,3 +77,4 @@ terminal:
 
 skills:
   creation_nudge_interval: 0
+_config_version: 49

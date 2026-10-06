@@ -6,7 +6,6 @@ hermes_home=${HERMES_HOME:-$HOME/.hermes}
 hermes_checkout=${HERMES_CHECKOUT:-$hermes_home/hermes-agent}
 sandbox_image=hermes-sandbox:2026.09.11
 gateway_service=hermes-gateway.service
-orchestrator_gateway_service=hermes-gateway-orchestrator.service
 soak_hours=0
 online=1
 web_mode=full
@@ -102,6 +101,28 @@ for profile in "${expected[@]}"; do
   run_check "config check: $profile" hermes -p "$profile" config check
 done
 
+check_profile_file() {
+  local profile=$1 relative=$2
+  local source_file="$repo_root/profiles/$profile/$relative"
+  local installed_file="$hermes_home/profiles/$profile/$relative"
+  if [[ ! -f "$source_file" ]]; then
+    [[ ! -e "$installed_file" ]] && pass "$profile has no managed $relative" || fail "$profile has unexpected managed $relative"
+    return
+  fi
+  if [[ -f "$installed_file" ]] && cmp -s "$source_file" "$installed_file"; then
+    pass "$profile managed file is current: $relative"
+  else
+    fail "$profile managed file is current: $relative"
+  fi
+}
+
+for profile in "${expected[@]}"; do
+  check_profile_file "$profile" config.yaml
+  check_profile_file "$profile" SOUL.md
+  check_profile_file "$profile" memories/MEMORY.md
+  check_profile_file "$profile" memories/USER.md
+done
+
 check_profile_skills() {
   local profile=$1
   local source_dir="$repo_root/profiles/$profile/skills"
@@ -174,7 +195,7 @@ if grep -Fxq '  cwd: /srv/hermes/monitor' "$web_monitor_config" \
 else
   fail "Web Monitor workspace mount source and compatibility settings"
 fi
-run_check "Hermes checkout is clean and pinned" "$repo_root/scripts/verify-hermes-pin.sh"
+run_check "Hermes CLI is installed" hermes --version
 run_check "Coder LCM checkout is clean and pinned" "$repo_root/scripts/verify-lcm-pin.sh"
 run_check "Wiki Maintainer QMD runtime is pinned" "$repo_root/scripts/verify-qmd-pin.sh"
 run_check "Wiki Maintainer QMD index is readable" \
@@ -244,7 +265,6 @@ expected_containers=7
   || fail "$web_mode web-stack containers are running (found $running_count)"
 
 run_check "gateway systemd service is active" systemctl --user is-active --quiet "$gateway_service"
-run_check "orchestrator gateway systemd service is active" systemctl --user is-active --quiet "$orchestrator_gateway_service"
 run_check "dashboard systemd service is active" systemctl --user is-active --quiet hermes-dashboard.service
 run_check "web systemd service is active" systemctl --user is-active --quiet hermes-web.service
 run_check "QMD index timer is active" systemctl --user is-active --quiet hermes-qmd-index.timer
