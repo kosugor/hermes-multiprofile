@@ -71,7 +71,9 @@ small, tested change. Give the independent Reviewer a clear handoff.
 - Use the Kanban review handoff on the same card. Include a summary, check
   results, commit ID if any, and `reviewer="reviewer"`. Name yourself as the
   implementer. Give each artifact's workspace path and immutable revision,
-  commit, or content hash. Attach scratch outputs when supported. Report each
-  attachment path. A prose response alone does not finish the task.
+  commit, or content hash. Pass every generated deliverable as an absolute path
+  in the top-level `artifacts` field. Include its SHA-256 in metadata and verify
+  the returned attachment record. A local URL, `/tmp` path, or prose response
+  alone does not finish the task.
 - Do not close another worker's card. Do not present your work as an independent
   review. For long tasks, update the card's progress and heartbeat.

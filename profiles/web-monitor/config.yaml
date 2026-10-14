@@ -7,18 +7,6 @@ model:
   default: gpt-5.6-luna
   openai_runtime: auto
 
-plugins:
-  enabled:
-    - observability/langfuse
-
-context:
-  engine: compressor
-
-updates:
-  check: false
-  pre_update_backup: full
-  non_interactive_local_changes: stash
-
 fallback_providers:
   - provider: openrouter
     model: openrouter/free
@@ -27,6 +15,20 @@ fallback_providers:
 
 nous:
   guest: true
+
+
+plugins:
+  enabled:
+    - langfuse
+    - observability/langfuse
+  disabled: []
+context:
+  engine: compressor
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
 
 agent:
   max_turns: 50
@@ -50,7 +52,7 @@ browser:
   record_sessions: false
   allow_private_urls: false
   auto_local_for_private_urls: false
-  cdp_url: ""
+  cdp_url: "http://127.0.0.1:9222"
   restrict_evaluate: true
   allow_unsafe_evaluate: false
   use_real_profile: false
@@ -63,7 +65,7 @@ terminal:
   timeout: 120
   home_mode: profile
   lifetime_seconds: 600
-  docker_image: hermes-sandbox:2026.09.11
+  docker_image: nikolaik/python-nodejs:python3.11-nodejs20
   docker_mount_cwd_to_workspace: true
   docker_run_as_host_user: false
   docker_forward_env: []
@@ -92,4 +94,10 @@ cron:
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+bot_desktop:
+  placement: gateway
+_left_core_installed:
+  - langfuse

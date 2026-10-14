@@ -7,10 +7,20 @@ model:
   default: gpt-5.6-sol
   openai_runtime: auto
 
+fallback_providers:
+  - provider: openrouter
+    model: openrouter/free
+  - provider: nous
+    model: nous/welcome
+
+nous:
+  guest: true
+
 plugins:
   enabled:
+    - langfuse
     - observability/langfuse
-
+  disabled: []
 context:
   engine: compressor
 
@@ -36,12 +46,20 @@ terminal:
   timeout: 300
   home_mode: profile
   lifetime_seconds: 600
-  docker_image: hermes-sandbox:2026.09.11
+  docker_image: hermes-coder:python3.11-nodejs20
   docker_mount_cwd_to_workspace: true
   docker_run_as_host_user: false
   docker_forward_env: []
   docker_network: false
-  docker_extra_args: ["--pids-limit", "256"]
+  docker_extra_args:
+    - "--pids-limit"
+    - "256"
+  docker_volumes:
+    - "${HERMES_KANBAN_EVIDENCE_DIR}:/evidence:ro"
+    - "/home/hermes/.hermes/profiles/wiki-maintainer/skills/maintain-obsidian-wiki:/review-source/maintain-obsidian-wiki:ro"
+    - "/home/hermes/.hermes/profiles/wiki-maintainer/skills/scheduled-wiki-maintenance:/review-source/scheduled-wiki-maintenance:ro"
+    - "/home/hermes/.hermes/profiles/wiki-maintainer/skills/audit-vault-links:/review-source/audit-vault-links:ro"
+    - "/home/hermes/.hermes/profiles/wiki-maintainer/skills/wiki-content-quality:/review-source/wiki-content-quality:ro"
   container_cpu: 1
   container_memory: 1536
   container_persistent: true
@@ -56,4 +74,8 @@ web:
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+_left_core_installed:
+  - langfuse

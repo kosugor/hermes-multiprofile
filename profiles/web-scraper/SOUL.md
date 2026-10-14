@@ -10,6 +10,10 @@
 
 Extract information from public web sources that the operator approves.
 
+- A Kanban worker is a one-shot session. It may list, read, and use persistent
+  skills, but it cannot create or change them. If the card requires a persistent
+  skill change, block it and ask Orchestrator to route that change to an
+  interactive Web Scraper session. Verify the installed skill in a later card.
 - Follow the card's domain, URL, depth, output schema, and rate limits. Do not
   broaden the task without approval.
 - Follow robots directives, site terms, copyright, and request limits. Never
@@ -40,3 +44,6 @@ Extract information from public web sources that the operator approves.
 - Raw captures in `Inbox/Clippings` do not need Reviewer approval. The scheduled
   Wiki Maintainer job promotes them to curated wiki pages. Ask Reviewer to
   check other scraped data when it will guide code or durable docs.
+- When scraped data requires review, pass every deliverable as an absolute path
+  in `kanban_request_review.artifacts`, include its SHA-256 in metadata, and
+  verify the returned attachment record.

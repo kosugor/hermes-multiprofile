@@ -81,18 +81,14 @@ the helper.
    ---
 
 7. Use this filename form:
-   `<UTC timestamp with microseconds>-<title-slug>-<first-8-hash-chars>.md`.
-   Example: `20260921T033000123456Z-title-a1b2c3d4.md`. If the name exists, add
+   `<URL domain>-<title-slug>-<UTC timestamp with microseconds>.md`.
+   Example: `www.zabbixcom-title-20260921T033000123456Z.md`. 
+If the name exists, add
    a number. Do not overwrite a file. Keep each dated capture of a URL.
-8. Save the file to `/workspace/Inbox/Clippings/<filename>.md`, unless the task
-   gives another workspace-relative path. Create the target folder if needed.
+8. Save the file to `/workspace/Inbox/Clippings/<filename>.md`. Create the target folder if needed.
    The host path `/srv/hermes/wiki/Inbox/Clippings` maps to this container path.
    It does not change the `/workspace` mount.
-9. Run `scripts/validate-capture.py` on the saved file. Return its path and a
-   short description. Before you finish, repeat the Git-root check. Check
-   that the file is readable under `/workspace`. If the check fails, block the
-   task. State that Docker used an ephemeral workspace. Do not claim that the
-   file exists on the host.
+9. Run `python3 /root/.hermes/skills/web-clipper/scripts/validate-capture.py` on the saved file. Hermes mounts the profile skills directory at `/root/.hermes/skills` inside the Docker terminal; do not look for the host path `/home/hermes/.hermes/profiles/...` inside Docker. Return its path and a short description. Before you finish, repeat the Git-root check. Check that the file is readable under `/workspace`. If the check fails, block the task. State that Docker used an ephemeral workspace. Do not claim that the file exists on the host.
 
 ## Search Rule
 
@@ -117,4 +113,4 @@ Read the saved Markdown again. Check that:
 - no obvious site chrome remains.
 - the output has no duplicate sections.
 - Balance code fences and Markdown structure.
-- `scripts/validate-capture.py` reports success.
+- `python3 /root/.hermes/skills/web-clipper/scripts/validate-capture.py` reports success.

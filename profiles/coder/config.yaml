@@ -7,6 +7,15 @@ model:
   default: gpt-5.6-sol
   openai_runtime: auto
 
+fallback_providers:
+  - provider: openrouter
+    model: openrouter/free
+  - provider: nous
+    model: nous/welcome
+
+nous:
+  guest: true
+
 updates:
   check: false
   pre_update_backup: full
@@ -16,7 +25,6 @@ plugins:
   enabled:
     - hermes-lcm
     - observability/langfuse
-
   disabled:
     - hermes-lcm
 context:
@@ -43,7 +51,7 @@ terminal:
   timeout: 300
   home_mode: profile
   lifetime_seconds: 600
-  docker_image: hermes-sandbox:2026.09.11
+  docker_image: hermes-coder:python3.11-nodejs20
   docker_mount_cwd_to_workspace: true
   # With a rootless daemon, container root maps to the unprivileged Hermes
   # account on the host. Do not pass the host UID again: it maps to a
@@ -62,4 +70,11 @@ worktree_sync: false
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+onboarding:
+  seen:
+    tool_progress_prompt: true
+_left_core_installed:
+  - langfuse

@@ -29,6 +29,15 @@ that cites evidence.
 - Send research to `researcher`, code work to `coder`, and reviews to `reviewer`.
   Send docs to `wiki-maintainer`, one-time extraction to `web-scraper`, and
   recurring checks to `web-monitor`.
+- Never assign a Kanban card to `default`. It is an interactive profile, not a
+  board worker. Route host service and system configuration diagnostics to the
+  operator's direct session. Do not send them to a sandboxed worker.
+- Check the target profile's exposed tools and assigned workspace before you
+  dispatch. A profile declaration does not prove that a one-shot worker has the
+  same tools as an interactive session.
+- Kanban workers can read persistent skills but cannot create or change them.
+  Route persistent skill changes to an interactive session for that profile.
+  Create a separate Kanban card only to verify the installed skill.
 - Treat `clip <absolute HTTP(S) URL>` as a one-time Web Scraper task on the
   `wiki` board. For `kanban_create`, set `workspace_kind=dir` and
   `workspace_path=/srv/hermes/wiki`. The pinned Hermes release needs both
@@ -57,6 +66,10 @@ that cites evidence.
   immutable revision, commit, or hash. Reviewer must read the artifact in its
   own session. If Reviewer cannot read it, keep the review blocked. Product
   docs about attachments do not prove access.
+- Require the implementer to pass each deliverable as an absolute path in the
+  `artifacts` field of `kanban_request_review`. Require the returned attachment
+  record and a SHA-256 digest. A local URL, `/tmp` path, or prose-only path is
+  not a review handoff.
 - Web Scraper, Kanban workers, and cron share one wiki lock at
   `/workspace/.hermes-maintenance/wiki-writer.lock`. Its host path is
   `/srv/hermes/wiki/.hermes-maintenance/wiki-writer.lock`. Before wiki access,
@@ -77,6 +90,10 @@ that cites evidence.
   through the original card and implementer. Create a new card only for new
   work or a documented false success on an immutable card.
 - Allow one worker at a time. Use a dependency chain on this two-core host.
+- Keep one infrastructure canary for each failure. After a deterministic
+  startup failure, record the command and error on that card. Do not create
+  duplicate mount-test cards. Archive stale canaries after the repaired canary
+  passes.
 - If a task lacks credentials, a dependency image, a monitor target, or human
   judgment, block its card. Tell the operator what you need. Do not weaken the
   sandbox.

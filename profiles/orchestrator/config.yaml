@@ -3,8 +3,17 @@ model:
   default: gpt-6.1-sol
   openai_runtime: auto
   base_url: https://chatgpt.com/backend-api/codex
+fallback_providers:
+  - provider: openrouter
+    model: openrouter/free
+  - provider: nous
+    model: nous/welcome
+nous:
+  guest: true
 toolsets:
   - kanban
+  - skills
+  - cronjob
 database:
   journal_mode: wal
   synchronous: FULL
@@ -21,8 +30,6 @@ agent:
     - code_execution
     - delegation
     - messaging
-    - cronjob
-    - skills
     - skills_hub
     - vision
     - image_gen
@@ -34,14 +41,17 @@ skills:
   creation_nudge_interval: 0
 plugins:
   enabled:
+    - langfuse
     - observability/langfuse
+  disabled: []
 cron:
   allow_agent_scheduling: false
   preflight: true
   max_parallel_jobs: 1
 kanban:
   auto_subscribe_on_create: true
-  dispatch_in_gateway: true
+  # The main gateway owns dispatch for every profile on this host.
+  dispatch_in_gateway: false
   review_dispatch: true
   dispatch_interval_seconds: 60
   orchestrator_profile: orchestrator
@@ -62,7 +72,7 @@ updates:
   check: false
   pre_update_backup: full
   non_interactive_local_changes: stash
-_config_version: 49
+_config_version: 50
 platform_toolsets:
   cli:
     - clarify
@@ -98,3 +108,9 @@ telemetry:
     send: true
 dashboard:
   theme: default-large
+memory:
+  write_approval: false
+approvals:
+  destructive_slash_confirm: false
+_left_core_installed:
+  - langfuse

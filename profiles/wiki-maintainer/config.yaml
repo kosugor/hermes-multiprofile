@@ -9,14 +9,6 @@ model:
   default: gpt-5.6-terra
   openai_runtime: auto
 
-context:
-  engine: compressor
-
-updates:
-  check: false
-  pre_update_backup: full
-  non_interactive_local_changes: stash
-
 fallback_providers:
   - provider: openrouter
     model: openrouter/free
@@ -26,17 +18,25 @@ fallback_providers:
 nous:
   guest: true
 
+context:
+  engine: compressor
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+
 agent:
   max_turns: 100
   reasoning_effort: medium
   verify_on_stop: true
-  disabled_toolsets: [browser, web, computer_use, code_execution, delegation, messaging, cronjob, skills_hub, vision, image_gen, tts]
+  disabled_toolsets: [browser, web, computer_use, messaging, skills_hub, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [file, terminal, memory, skills]
-  telegram: [file, terminal, memory, skills]
-  api_server: [file, terminal, memory, skills]
-  cron: [file, terminal, memory, skills]
+  cli: [file, terminal, code_execution, memory, skills, cronjob]
+  telegram: [file, terminal, code_execution, memory, skills, cronjob]
+  api_server: [file, terminal, code_execution, memory, skills, cronjob]
+  cron: [file, terminal, code_execution, memory, skills, cronjob]
 
 mcp_servers:
   qmd:
@@ -77,4 +77,16 @@ terminal:
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+curator:
+  enabled: true
+onboarding:
+  seen:
+    tool_progress_prompt: true
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+    offer_version: 2

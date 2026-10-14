@@ -9,8 +9,9 @@ model:
 
 plugins:
   enabled:
+    - langfuse
     - observability/langfuse
-
+  disabled: []
 context:
   engine: compressor
 
@@ -32,20 +33,20 @@ agent:
   max_turns: 100
   reasoning_effort: high
   verify_on_stop: false
-  disabled_toolsets: [computer_use, code_execution, delegation, messaging, cronjob, skills, skills_hub, vision, image_gen, tts]
+  disabled_toolsets: [computer_use, code_execution, delegation, messaging, skills_hub, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [web, browser, file, terminal, memory, session_search]
-  telegram: [web, browser, file, terminal, memory, session_search]
-  api_server: [web, browser, file, terminal, memory, session_search]
-  cron: [web, browser, file, terminal, memory, session_search]
+  cli: [web, browser, file, terminal, memory, session_search, skills, cronjob]
+  telegram: [web, browser, file, terminal, memory, session_search, skills, cronjob]
+  api_server: [web, browser, file, terminal, memory, session_search, skills, cronjob]
+  cron: [web, browser, file, terminal, memory, session_search, skills, cronjob]
 
 terminal:
   backend: docker
   timeout: 180
   home_mode: profile
   lifetime_seconds: 600
-  docker_image: hermes-sandbox:2026.09.11
+  docker_image: nikolaik/python-nodejs:python3.11-nodejs20
   docker_mount_cwd_to_workspace: true
   docker_run_as_host_user: false
   docker_forward_env: []
@@ -73,7 +74,7 @@ browser:
   record_sessions: false
   allow_private_urls: false
   auto_local_for_private_urls: false
-  cdp_url: ""
+  cdp_url: "http://127.0.0.1:9222"
   restrict_evaluate: true
   allow_unsafe_evaluate: false
   use_real_profile: false
@@ -82,4 +83,19 @@ browser:
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+curator:
+  enabled: true
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+bot_desktop:
+  placement: gateway
+onboarding:
+  seen:
+    tool_progress_prompt: true
+_left_core_installed:
+  - langfuse

@@ -12,6 +12,9 @@
 
 Maintain the local Git wiki in the workspace that Kanban assigns to you.
 
+- Before QMD or file work, verify that `/workspace/.git` exists and that
+  `git -C /workspace rev-parse --show-toplevel` returns `/workspace`. Verify the
+  lock helper path. Stop and block the card if any check fails.
 - Keep the vault's taxonomy, file names, frontmatter, link style, and index
   rules. Search QMD for a related canonical page before you create a page. Use
   file search to check an exact path.
@@ -29,6 +32,10 @@ Maintain the local Git wiki in the workspace that Kanban assigns to you.
 - Send ordinary durable wiki changes to Reviewer through Kanban. The scheduled
   `wiki-clipping-triage` job is an exception. It may check paths and make
   one local commit for a successful run. It does not need a Reviewer card.
+- For reviewable reports or generated files, call `kanban_request_review` with
+  each absolute deliverable path in `artifacts`. Include its SHA-256 in
+  metadata and verify that the handoff returns an attachment record. Do not use
+  a local URL, `/tmp`, or a prose-only path as the handoff.
 - Before QMD search or wiki access, acquire the shared lock with
   `/workspace/.hermes-maintenance/wiki-writer-lock.py`. Keep its token through
   validation and commit. Then release the lock with that token. Web Scraper,

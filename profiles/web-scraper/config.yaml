@@ -4,17 +4,11 @@ database:
 
 model:
   provider: openai-codex
-  default: gpt-5.6-luna
+  default: gpt-6-luna
   openai_runtime: auto
 
-context:
-  engine: compressor
-
-updates:
-  check: false
-  pre_update_backup: full
-  non_interactive_local_changes: stash
-
+  base_url: https://chatgpt.com/backend-api/codex
+  api_mode: codex_responses
 fallback_providers:
   - provider: openrouter
     model: openrouter/free
@@ -24,17 +18,25 @@ fallback_providers:
 nous:
   guest: true
 
+context:
+  engine: compressor
+
+updates:
+  check: false
+  pre_update_backup: full
+  non_interactive_local_changes: stash
+
 agent:
   max_turns: 80
   reasoning_effort: medium
   verify_on_stop: false
-  disabled_toolsets: [computer_use, code_execution, delegation, messaging, cronjob, skills_hub, memory, session_search, vision, image_gen, tts]
+  disabled_toolsets: [computer_use, delegation, messaging, skills_hub, session_search, vision, image_gen, tts]
 
 platform_toolsets:
-  cli: [web, browser, file, terminal, skills]
-  telegram: [web, browser, file, terminal, skills]
-  api_server: [web, browser, file, terminal, skills]
-  cron: [web, browser, file, terminal, skills]
+  cli: [web, browser, file, terminal, code_execution, memory, skills, cronjob]
+  telegram: [web, browser, file, terminal, code_execution, memory, skills, cronjob]
+  api_server: [web, browser, file, terminal, code_execution, memory, skills, cronjob]
+  cron: [web, browser, file, terminal, code_execution, memory, skills, cronjob]
 
 browser:
   # "off" disables Browser Use CLI; Hermes built-in local Chromium tools remain
@@ -48,7 +50,7 @@ browser:
   record_sessions: false
   allow_private_urls: false
   auto_local_for_private_urls: false
-  cdp_url: ""
+  cdp_url: "http://127.0.0.1:9222"
   restrict_evaluate: true
   allow_unsafe_evaluate: false
   use_real_profile: false
@@ -65,6 +67,7 @@ terminal:
   docker_run_as_host_user: false
   docker_forward_env: []
   docker_network: false
+  cwd: /srv/hermes/wiki
   docker_extra_args: ["--pids-limit", "256"]
   container_cpu: 1
   container_memory: 1536
@@ -84,4 +87,20 @@ web:
 
 skills:
   creation_nudge_interval: 0
-_config_version: 49
+kanban:
+  dispatch_in_gateway: false
+_config_version: 50
+curator:
+  enabled: true
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+bot_desktop:
+  placement: gateway
+onboarding:
+  seen:
+    tool_progress_prompt: true
+command_allowlist:
+  - script execution via -e/-c flag
+  - script execution via heredoc
