@@ -39,9 +39,7 @@ platform_toolsets:
   cron: [web, browser, file, terminal, code_execution, memory, skills, cronjob]
 
 browser:
-  # "off" disables Browser Use CLI; Hermes built-in local Chromium tools remain
-  # enabled for the Firecrawl fallback described in the clipping skill.
-  backend: "off"
+  backend: "on"
   cloud_provider: local
   engine: chrome
   headed: false
