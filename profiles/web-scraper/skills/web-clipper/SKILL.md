@@ -2,7 +2,7 @@
 name: web-clipper
 description: "Clip web pages and highlights into Obsidian Markdown."
 version: 1.1.0
-author: Goran Kosutic, Hermes Agent
+author: Hermes Agent
 license: MIT
 platforms: [linux]
 metadata:
@@ -82,9 +82,9 @@ source: "{{url}}"
 author: {{author}}
 published: {{published}}
 created: {{created}}
-captured_status: "complete|partial|shell|failed"
-captured_method: "firecrawl|browser|firecrawl+browser"
-captured_limitations: "<none, or concise list of omissions/restrictions>"
+capture_status: "complete|partial|shell|failed"
+capture_method: "firecrawl|browser|firecrawl+browser"
+capture_limitations: "<none, or concise list of omissions/restrictions>"
 provider: "<provider used for this run>"
 model: "<model used for this run>"
 description: {{description}}
@@ -97,7 +97,7 @@ tags:
 
 The default output contract is:
 
-- frontmatter fields, in this order: `title`, `source`, `author`, `published`, `created`, `captured_status`, `captured_method`, `captured_limitations`, `provider`, `model`, `description`, `content_sha256`, `tags`;
+- frontmatter fields, in this order: `title`, `source`, `author`, `published`, `created`, `capture_status`, `capture_method`, `capture_limitations`, `provider`, `model`, `description`, `content_sha256`, `tags`;
 - empty unknown scalar metadata as blank YAML values, not guessed text;
 - `created` as the current date in ISO format;
 - tags as a YAML list, with `clippings` by default;
@@ -143,11 +143,11 @@ Filters should be explicit and conservative. The default webclip cleanup removes
 6. **Handle duplicates safely.** If the exact target exists, read it. Prefer a new timestamped/suffixed note or a clearly requested update. Never overwrite silently. For an intentional update, use `patch` or a full `write_file` only after preserving existing content that should remain.
    - Completion criterion: no existing note was lost and the chosen action is explicit.
 
-7. **Write the note.** Use `write_file` with complete Markdown and the selected template. With the default webclip template, write only the seven documented frontmatter fields and the cleaned body; add extra fields such as `capture_mode` or extraction provenance only when the user requests them or when a material limitation must be recorded.
+7. **Write the note.** Use `write_file` with complete Markdown and the selected template. With the default webclip template, write only the documented frontmatter fields and the cleaned body; add extra fields such as `capture_mode` or extraction provenance only when the user requests them or when a material limitation must be recorded.
    - Completion criterion: the file tool reports a verified write.
 
-8. **Verify the artifact.** Read the exact destination with `read_file`; confirm the seven frontmatter fields, title, URL, and body are present, plus any explicitly requested extra metadata. Check that the note is inside the resolved vault and that no secret or browser session data was saved.
-Run `python3 /root/.hermes/skills/web-clipper/scripts/validate-capture.py` on the saved file. Hermes mounts the profile skills directory at `/root/.hermes/skills` inside the Docker terminal; do not look for the host path `/home/hermes/.hermes/profiles/...` inside Docker. Return its path and a short description. Before you finish, repeat the Git-root check. Check that the file is readable under `/workspace`. If the check fails, block the task. State that Docker used an ephemeral workspace. Do not claim that the file exists on the host.
+8. **Verify the artifact.** Read the exact destination with `read_file`; confirm the frontmatter fields, title, URL, and body are present, plus any explicitly requested extra metadata. Check that the note is inside the resolved vault and that no secret or browser session data was saved.
+Run `python3 /root/.hermes/skills/web-clipper/scripts/validate-capture.py <saved-file>` on the saved file. Hermes mounts the profile skills directory at `/root/.hermes/skills` inside the Docker terminal; do not look for the host path `/home/hermes/.hermes/profiles/...` inside Docker. Return its path and a short description. Before you finish, repeat the Git-root check. Check that the file is readable under `/workspace`. If the check fails, block the task. State that Docker used an ephemeral workspace. Do not claim that the file exists on the host.
    - Completion criterion: the written note is readable and matches the requested mode/template.
 
 ## Markdown Conversion Rules

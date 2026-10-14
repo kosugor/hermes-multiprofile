@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate capture frontmatter, exact body bytes, and capture disposition."""
+
 from __future__ import annotations
 
 import argparse
@@ -19,9 +20,19 @@ ERROR_SHELL_RE = re.compile(
     rb"|^\s*(?:access denied|request blocked by security policy|verify you are human|enable javascript and cookies)\b"
 )
 REQUIRED = (
-    "title", "supplied_url", "canonical_url", "source", "published_at", "clipped",
-    "retrieved_at", "capture_status", "capture_method", "provider", "model",
+    "title",
+    "source",
+    "author",
+    "published",
+    "created",
+    "capture_status",
+    "capture_method",
+    "capture_limitations",
+    "provider",
+    "model",
+    "description",
     "content_sha256",
+    "tags",
 )
 
 
@@ -29,7 +40,11 @@ class UniqueKeySafeLoader(yaml.SafeLoader):
     """Safe YAML loader that rejects duplicate keys instead of silently losing data."""
 
 
-def _construct_unique_mapping(loader: UniqueKeySafeLoader, node: yaml.nodes.MappingNode, deep: bool = False):
+def _construct_unique_mapping(
+    loader: UniqueKeySafeLoader, node: yaml.nodes.MappingNode, deep: bool = False
+):
+    # Check explicit keys first: YAML's merge keys may repeat inherited values,
+    # but writing the same key twice in one mapping should be rejected.
     explicit_keys = set()
     for key_node, _ in node.value:
         if key_node.tag == "tag:yaml.org,2002:merge":
@@ -39,11 +54,19 @@ def _construct_unique_mapping(loader: UniqueKeySafeLoader, node: yaml.nodes.Mapp
             duplicate = key in explicit_keys
             explicit_keys.add(key)
         except TypeError as exc:
-            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
-                                                     "found unhashable key", key_node.start_mark) from exc
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "found unhashable key",
+                key_node.start_mark,
+            ) from exc
         if duplicate:
-            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
-                                                     f"duplicate key {key!r}", key_node.start_mark)
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                f"duplicate key {key!r}",
+                key_node.start_mark,
+            )
     loader.flatten_mapping(node)
     mapping = {}
     for key_node, value_node in node.value:
@@ -51,21 +74,29 @@ def _construct_unique_mapping(loader: UniqueKeySafeLoader, node: yaml.nodes.Mapp
         try:
             mapping[key] = loader.construct_object(value_node, deep=deep)
         except TypeError as exc:
-            raise yaml.constructor.ConstructorError("while constructing a mapping", node.start_mark,
-                                                     "found unhashable key", key_node.start_mark) from exc
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "found unhashable key",
+                key_node.start_mark,
+            ) from exc
     return mapping
 
 
-UniqueKeySafeLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
+UniqueKeySafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping
+)
 
 
 def split_capture(data: bytes) -> tuple[bytes, bytes] | None:
-    if not data.startswith(b"---\n"):
+    # Keep the body as bytes so its hash covers the exact saved Markdown.
+    opening = re.match(rb"---\r?\n", data)
+    if opening is None:
         return None
-    marker = data.find(b"\n---\n", 4)
-    if marker < 0:
+    closing = re.search(rb"\r?\n---\r?\n", data, opening.end())
+    if closing is None:
         return None
-    return data[4:marker], data[marker + 5:]
+    return data[opening.end() : closing.start()], data[closing.end() :]
 
 
 def parse_frontmatter(raw: bytes) -> tuple[dict[str, object], list[str]]:
@@ -98,6 +129,7 @@ def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
     errors: list[str] = []
     resolved = path.resolve()
     if root is not None:
+        # Resolve both paths before checking containment, including symlinks.
         allowed = root.expanduser().resolve()
         try:
             resolved.relative_to(allowed)
@@ -114,75 +146,108 @@ def validate(path: Path, root: Path | None = None) -> tuple[list[str], str]:
     values, yaml_errors = parse_frontmatter(frontmatter)
     errors.extend(yaml_errors)
     for key in REQUIRED:
+        if key not in values:
+            errors.append(f"frontmatter field is missing: {key}")
+    if all(key in values for key in REQUIRED):
+        field_order = [key for key in values if key in REQUIRED]
+        if field_order != list(REQUIRED):
+            errors.append("frontmatter fields are not in the documented order")
+    title = scalar_text(values.get("title", ""))
+    if not title:
+        errors.append("frontmatter field is empty: title")
+    source = scalar_text(values.get("source", ""))
+    if not source:
+        errors.append("frontmatter field is empty: source")
+    elif not re.match(r"^https?://\S+$", source):
+        errors.append("source must be an absolute HTTP(S) URL")
+    for key in ("created", "capture_limitations", "provider", "model"):
         if not scalar_text(values.get(key, "")):
-            errors.append(f"frontmatter field is missing or empty: {key}")
-    for key in ("supplied_url", "canonical_url"):
-        value = scalar_text(values.get(key, ""))
-        if value and not re.match(r"^https?://\S+$", value):
-            errors.append(f"{key} must be an absolute HTTP(S) URL")
-    if values.get("canonical_url") and scalar_text(values.get("source")) != scalar_text(values.get("canonical_url")):
-        errors.append("source must equal canonical_url for legacy triage compatibility")
-    published = scalar_text(values.get("published_at", ""))
-    if published and published != "unknown":
+            errors.append(f"frontmatter field is empty: {key}")
+    created = scalar_text(values.get("created", ""))
+    if created:
         try:
-            date.fromisoformat(published)
+            date.fromisoformat(created)
         except ValueError:
-            errors.append("published_at must be an ISO date or unknown")
-    clipped = scalar_text(values.get("clipped", ""))
-    if clipped:
-        try:
-            date.fromisoformat(clipped)
-        except ValueError:
-            errors.append("clipped must be an ISO date")
-    retrieved_at = scalar_text(values.get("retrieved_at", ""))
-    if retrieved_at:
-        try:
-            timestamp = datetime.fromisoformat(retrieved_at.replace("Z", "+00:00"))
-            if timestamp.tzinfo is None:
-                raise ValueError
-        except ValueError:
-            errors.append("retrieved_at must be an ISO-8601 timestamp with timezone")
-        if not retrieved_at.endswith("Z"):
-            errors.append("retrieved_at must end in Z")
+            errors.append("created must be an ISO date")
     status = scalar_text(values.get("capture_status", ""))
-    if status and status not in STATUSES:
+    if not status:
+        errors.append("frontmatter field is empty: capture_status")
+    elif status not in STATUSES:
         errors.append("capture_status must be complete, partial, shell, or failed")
+    method = scalar_text(values.get("capture_method", ""))
+    if not method:
+        errors.append("frontmatter field is empty: capture_method")
+    elif method not in {"firecrawl", "browser", "firecrawl+browser"}:
+        errors.append("capture_method must be firecrawl, browser, or firecrawl+browser")
+    tags = values.get("tags")
+    if "tags" in values and (
+        not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags)
+    ):
+        errors.append("tags must be a YAML list of strings")
     capture_hash = scalar_text(values.get("content_sha256", ""))
-    if capture_hash and not HASH_RE.fullmatch(capture_hash):
+    if not capture_hash:
+        errors.append("frontmatter field is empty: content_sha256")
+    elif not HASH_RE.fullmatch(capture_hash):
         errors.append("content_sha256 must be a 64-character hexadecimal SHA-256")
     if capture_hash and HASH_RE.fullmatch(capture_hash):
+        # Hash only the body, excluding YAML delimiters and frontmatter.
         actual_hash = hashlib.sha256(body).hexdigest()
         if capture_hash.lower() != actual_hash:
             errors.append("content_sha256 does not match the exact Markdown body bytes")
-    if status == "complete":
+    if status in {"complete", "partial"}:
         if not body.strip():
-            errors.append("complete capture body is empty")
+            errors.append(f"{status} capture body is empty")
+        else:
+            first_content_line = next(
+                line.strip()
+                for line in body.decode("utf-8", errors="replace").splitlines()
+                if line.strip()
+            )
+            if not first_content_line.startswith("## ") and not re.match(
+                r"^>\s*\[![A-Za-z0-9_-]+\]", first_content_line
+            ):
+                errors.append(
+                    f"{status} capture body must begin with a callout or level-two heading"
+                )
+    if status == "complete":
         if len(re.findall(rb"(?m)^```", body)) % 2:
             errors.append("code fences are unbalanced")
-        if len(re.findall(rb"(?m)^#\s+\S", body)) != 1:
-            errors.append("complete capture must contain exactly one H1")
         if ERROR_SHELL_RE.search(body[:8192]):
             errors.append("error/challenge page cannot be marked as a complete source")
-        http_status = scalar_text(values.get("source_http_status", ""))
-        if http_status and (not http_status.isdigit() or not 200 <= int(http_status) < 300):
-            errors.append("complete capture requires a successful source HTTP status")
     if errors:
         return errors, "corrupt"
-    outcome = {"complete": "complete", "partial": "deferred", "shell": "shell", "failed": "failed"}.get(status, "corrupt")
+    # Map stored capture states to the labels used by downstream triage.
+    outcome = {
+        "complete": "complete",
+        "partial": "deferred",
+        "shell": "shell",
+        "failed": "failed",
+    }.get(status, "corrupt")
     return [], outcome
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture", type=Path)
-    parser.add_argument("--root", type=Path, help="required artifact root for workspace checks")
+    parser.add_argument(
+        "--root", type=Path, help="required artifact root for workspace checks"
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     if not args.capture.is_file():
         parser.error(f"capture does not exist: {args.capture}")
     errors, outcome = validate(args.capture, args.root)
     if args.json:
-        print(json.dumps({"path": str(args.capture), "ok": not errors, "outcome": outcome, "errors": errors}))
+        print(
+            json.dumps(
+                {
+                    "path": str(args.capture),
+                    "ok": not errors,
+                    "outcome": outcome,
+                    "errors": errors,
+                }
+            )
+        )
     else:
         print(f"capture={args.capture}")
         print(f"outcome={outcome}")
